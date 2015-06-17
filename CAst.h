@@ -52,7 +52,7 @@ class CTable: public CAst
 {
 public:
 	CName* pName;
-	string alias;
+	quot_string alias;
 	CSymbol* sym;
 	bool b_quot;
 	virtual char* whoami() const;
@@ -74,7 +74,7 @@ class CSelExpr: public CAst
 {
 public:
 	CAst* a;
-	string alias;
+	quot_string alias;
 	bool b_quot;
 	virtual char* whoami() const;
 	~CSelExpr();
@@ -202,7 +202,7 @@ class CTabSub: public CAst
 {
 public:
 	CAst* a;
-	string alias;
+	quot_string alias;
 	CSymbol* sym;
 	bool b_quot;
 	virtual char* whoami() const;
@@ -214,7 +214,7 @@ class CSelTabSub: public CAst
 {
 public:
 	CAst* a;
-	string alias;
+	quot_string alias;
 	bool b_quot;
 	virtual char* whoami() const;
 	~CSelTabSub();
@@ -355,7 +355,7 @@ class CTabProc: public CAst
 {
 public:
 	CAst* a;
-	string alias;
+	quot_string alias;
 	CSymbol* sym;
 	bool b_quot;
 	bool b_table_pref; //для выражений вида TABLE(func())

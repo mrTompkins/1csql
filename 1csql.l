@@ -310,7 +310,7 @@ B'[01]+'     { yylval.strval = strdup(yytext); return STRING; }
 
    /* name followed by the dot */
 "." { oldstate.push_back(YY_START); BEGIN DOT_NAME; return yytext[0]; }
-<DOT_NAME>[A-Za-z][A-Za-z0-9_$]* { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(yytext, false); return NAME; }
+<DOT_NAME>[A-Za-zР-пр-џ][A-Za-zР-пр-џ0-9_$]* { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(yytext, false); return NAME; }
 <DOT_NAME>\"(\\.|\"\"|[^"\n])*\" { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(true); yylval.qpsz->psz = (char*)malloc(strlen(yytext)-1); memset(yylval.qpsz->psz, '\0', strlen(yytext)-1); strncpy(yylval.qpsz->psz, yytext+1, strlen(yytext)-2); return NAME; }
 <DOT_NAME>"*" { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(yytext, false); return NAME; }
 
@@ -350,7 +350,7 @@ COUNT    { int c = yyinput(); unput(c);
            yylval.qpsz = newQuot_psz(yytext, false);
            return NAME; }
 
-[A-Za-z][A-Za-z0-9_$]*	{ yylval.qpsz = newQuot_psz(yytext, false);
+[A-Za-zР-пр-џ][A-Za-zР-пр-џ0-9_$]*	{ yylval.qpsz = newQuot_psz(yytext, false);
                           return NAME; }
 `[^`/\\.\n]+`           { yylval.qpsz = newQuot_psz(yytext+1, false);
 						  yylval.qpsz->psz[yyleng-2] = 0;

@@ -70,6 +70,8 @@ int main(int ac, char **av)
 	extern int yydebug;
 	FILE* fhtml;
 
+	setlocale(LC_ALL, "Russian");
+
 	if(ac > 1 && !strcmp(av[1], "-d")) {
 		yydebug = 1; ac--; av++;
 	}
@@ -78,7 +80,7 @@ int main(int ac, char **av)
 		perror(av[1]);
 		exit(1);
 	}
-	//yyin = fopen("C:\\Users\\AProsekov\\Documents\\Visual Studio 2010\\Projects\\pmysql\\Debug\\query.sql" , "r");
+	//yyin = fopen("C:\\Users\\AProsekov\\Documents\\Visual Studio 2010\\Projects\\1csql\\Debug\\query.sql" , "r");
 	
 	//вывод потока сообщений об ошибках в файл
 	//freopen("debug.dbg", "w", stderr);

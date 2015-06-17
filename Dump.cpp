@@ -14,7 +14,7 @@ void Dumpast(CName* pName)
 		}
 		if(name[i].b_quot)
 			printf("\"");
-		printf((*pName)[i].c_str());
+		printf((*pName)[i].text.c_str());
 		if(name[i].b_quot)
 			printf("\"");
 	}
@@ -66,7 +66,7 @@ void Dumpast(CAst* a)
 			printf(" as ");
 			if(((CTable*)a)->b_quot)
 				printf("\"");
-			printf("%s", ((CTable*)a)->alias.c_str());
+			printf("%s", ((CTable*)a)->alias.text.c_str());
 			if(((CTable*)a)->b_quot)
 				printf("\"");
 		}
@@ -85,7 +85,7 @@ void Dumpast(CAst* a)
 			printf(" as ");
 			if(((CSelExpr*)a)->b_quot)
 				printf("\"");
-			printf("%s", ((CSelExpr*)a)->alias.c_str());
+			printf("%s", ((CSelExpr*)a)->alias.text.c_str());
 			if(((CSelExpr*)a)->b_quot)
 				printf("\"");
 		}
@@ -203,7 +203,7 @@ void Dumpast(CAst* a)
 		{
 			if(((CTabSub*)a)->b_quot)
 				printf("\"");
-			printf("%s", ((CTabSub*)a)->alias.c_str());
+			printf("%s", ((CTabSub*)a)->alias.text.c_str());
 			if(((CTabSub*)a)->b_quot)
 				printf("\"");
 		}
@@ -219,7 +219,7 @@ void Dumpast(CAst* a)
 			printf(" as ");
 			if(((CSelTabSub*)a)->b_quot)
 				printf("\"");
-			printf("%s", ((CSelTabSub*)a)->alias.c_str());
+			printf("%s", ((CSelTabSub*)a)->alias.text.c_str());
 			if(((CSelTabSub*)a)->b_quot)
 				printf("\"");
 		}
@@ -383,7 +383,7 @@ void Dumpast(CAst* a)
 			printf(" as ");
 			if(((CTabProc*)a)->b_quot)
 				printf("\"");
-			printf("%s", ((CTabProc*)a)->alias.c_str());
+			printf("%s", ((CTabProc*)a)->alias.text.c_str());
 			if(((CTabProc*)a)->b_quot)
 				printf("\"");
 		}
@@ -669,7 +669,7 @@ void Get_column_names(CSymbol* sym, CAst* a, CEnv* env)
 		//обычные выражения
 		if(!strcmp(vl[ie]->whoami(), "CSelExpr"))
 		{
-			//берется синоним, или, если для выражение является полем и у него отстутствует синоним, то берется само поле
+			//берется синоним, или, если выражение является полем и у него отстутствует синоним, то берется само поле
 			if(((CSelExpr*)vl[ie])->alias.size() == 0 && !strcmp(((CSelExpr*)vl[ie])->a->whoami(), "CField"))
 			{
 				//переменная, содержащая поле
@@ -997,7 +997,7 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 
 	else if (!strcmp(a->whoami(), "CTabProc"))
 	{
-		sym = env->create_symbol(CName(), ((CTable*)a)->alias, "tab_proc");
+		sym = env->create_symbol(CName(), ((CTabProc*)a)->alias, "tab_proc");
 		((CTabProc*)a)->sym = sym;
 		MakeEnv(((CTabProc*)a)->a, env);
 	}
@@ -1229,7 +1229,7 @@ void Dumpast_html_recurs(CName* pName, FILE* f, double level)
 		}
 		if(name[i].b_quot)
 			fprintf(f, "\"");
-		fprintf(f, name[i].c_str());
+		fprintf(f, name[i].text.c_str());
 		if(name[i].b_quot)
 			fprintf(f, "\"");
 	}
@@ -1303,7 +1303,7 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			print_ident(f, 1.0);
 			if(((CTable*)a)->b_quot)
 				fprintf(f, "\"");
-			fprintf(f, "%s", ((CTable*)a)->alias.c_str());
+			fprintf(f, "%s", ((CTable*)a)->alias.text.c_str());
 			if(((CTable*)a)->b_quot)
 				fprintf(f, "\"");
 		}
@@ -1334,7 +1334,7 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;as&nbsp;</text>");
 			if(((CSelExpr*)a)->b_quot)
 				fprintf(f, "\"");
-			fprintf(f, "%s", ((CSelExpr*)a)->alias.c_str());
+			fprintf(f, "%s", ((CSelExpr*)a)->alias.text.c_str());
 			if(((CSelExpr*)a)->b_quot)
 				fprintf(f, "\"");
 		}
@@ -1639,7 +1639,7 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			print_ident(f, 1.0);
 			if(((CTabSub*)a)->b_quot)
 				fprintf(f, "\"");
-			fprintf(f, "%s", ((CTabSub*)a)->alias.c_str());
+			fprintf(f, "%s", ((CTabSub*)a)->alias.text.c_str());
 			if(((CTabSub*)a)->b_quot)
 				fprintf(f, "\"");
 			fprintf(f, "</text>");
@@ -1659,7 +1659,7 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;as&nbsp;</text>");
 			if(((CSelTabSub*)a)->b_quot)
 				fprintf(f, "\"");
-			fprintf(f, "<text class=\"text-field\">%s</text>", ((CSelTabSub*)a)->alias.c_str());
+			fprintf(f, "<text class=\"text-field\">%s</text>", ((CSelTabSub*)a)->alias.text.c_str());
 			if(((CSelTabSub*)a)->b_quot)
 				fprintf(f, "\"");
 		}
@@ -1935,7 +1935,7 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			print_ident(f, 1.0);
 			if(((CTabProc*)a)->b_quot)
 				fprintf(f, "\"");
-			fprintf(f, "%s", ((CTabProc*)a)->alias.c_str());
+			fprintf(f, "%s", ((CTabProc*)a)->alias.text.c_str());
 			if(((CTabProc*)a)->b_quot)
 				fprintf(f, "\"");
 		}

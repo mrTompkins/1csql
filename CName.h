@@ -10,8 +10,10 @@ using namespace std;
 class quot_string: public string
 {
 public:
+	string text;
 	bool b_quot;
-	quot_string(string s):string(s){}
+	quot_string():string(), text(), b_quot(false){}
+	quot_string(const string& sLow, const string& sNorm, bool quot):string(sLow), text(sNorm), b_quot(quot){}
 };
 
 /********* CName *********/
@@ -19,8 +21,8 @@ class CName: public vector<quot_string>
 {
 public:
 	CName():vector<quot_string>(){}
-	CName(string str);
-	CName(string str, bool b_quot);
+	CName(const string& str);
+	CName(const string& str, bool b_quot);
 };
 
 CName* newCName(char * psz, bool b_quot);

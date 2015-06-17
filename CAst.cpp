@@ -7,22 +7,22 @@ void lower(string & str)
 }
 
 /********* CName *********/
-CName::CName(string str, bool b_quot)
+CName::CName(const string& str, bool b_quot)
 {
-	lower(str);
+	string sLower(str);
+	lower(sLower);
 
-	quot_string qstr(str);
-	qstr.b_quot = b_quot;
+	quot_string qstr(sLower, str, b_quot);
 	
 	this->push_back(qstr);
 }
 
-CName::CName(string str)
+CName::CName(const string& str)
 {
-	lower(str);
+	string sLower(str);
+	lower(sLower);
 
-	quot_string qstr(str);
-	qstr.b_quot = false;
+	quot_string qstr(sLower, str, false);
 	
 	this->push_back(qstr);
 }
@@ -31,10 +31,11 @@ CName* newCName(char * psz, bool b_quot)
 {
 	debug("newCName");
 	string str = string(psz);
-	lower(str);
+	
+	string sLower(str);
+	lower(sLower);
 
-	quot_string qstr(str);
-	qstr.b_quot = b_quot;
+	quot_string qstr(sLower, str, b_quot);
 
 	CName* pName = new CName;
 	pName->push_back(qstr);
@@ -45,11 +46,12 @@ CName* addtoCName(CName* pName, char * psz, bool b_quot)
 {
 	debug("addtoCName");
 	string str = string(psz);
-	lower(str);
 	
-	quot_string qstr(str);
-	qstr.b_quot = b_quot;
+	string sLower(str);
+	lower(sLower);
 
+	quot_string qstr(sLower, str, b_quot);
+	
 	pName->push_back(qstr);
 	return pName;
 }
@@ -897,8 +899,9 @@ CAst* newCTable(CName* pName, char* pszAlias, bool b_quot)
 	pTable->pName = pName;
 	pTable->b_quot = b_quot;
 	string strAlias = string(pszAlias==NULL?"":pszAlias);
-	lower(strAlias);
-	pTable->alias = strAlias;
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pTable->alias = quot_string(sLowAlias, strAlias, false);
 	return pTable;
 }
 
@@ -919,8 +922,9 @@ CAst* newCSelExpr(CAst* a, char* pszAlias, bool b_quot)
 	pSelExpr->a = a;
 	pSelExpr->b_quot = b_quot;
 	string strAlias = string(pszAlias==NULL?"":pszAlias);
-	lower(strAlias);
-	pSelExpr->alias = strAlias;
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pSelExpr->alias = quot_string(sLowAlias, strAlias, false);
 	return pSelExpr;
 }
 
@@ -1061,8 +1065,9 @@ CAst* newCTabSub(CAst* a, char* pszAlias, bool b_quot)
 	pTabSub->a = a;
 	pTabSub->b_quot = b_quot;
 	string strAlias = string(pszAlias==NULL?"":pszAlias);
-	lower(strAlias);
-	pTabSub->alias = strAlias;
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pTabSub->alias = quot_string(sLowAlias, strAlias, false);
 	return pTabSub;
 }
 
@@ -1074,8 +1079,9 @@ CAst* newCSelTabSub(CAst* a, char* pszAlias, bool b_quot)
 	pSelTabSub->a = a;
 	pSelTabSub->b_quot = b_quot;
 	string strAlias = string(pszAlias==NULL?"":pszAlias);
-	lower(strAlias);
-	pSelTabSub->alias = strAlias;
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pSelTabSub->alias = quot_string(sLowAlias, strAlias, false);
 	return pSelTabSub;
 }
 
@@ -1249,8 +1255,9 @@ CAst* newCTabProc(CAst* a, char* pszAlias, bool b_quot, bool b_table_pref)
 	pTabProc->a = a;
 	pTabProc->b_quot = b_quot;
 	string strAlias = string(pszAlias==NULL?"":pszAlias);
-	lower(strAlias);
-	pTabProc->alias = strAlias;
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pTabProc->alias = quot_string(sLowAlias, strAlias, false);
 	pTabProc->b_table_pref = b_table_pref;
 	return pTabProc;
 }
