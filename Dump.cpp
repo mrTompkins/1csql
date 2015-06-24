@@ -172,7 +172,9 @@ void Dumpast(CAst* a)
 
 	else if(!strcmp(a->whoami(), "CInValExp"))
 	{
+		printf("(");
 		Dumpast(((CInValExp*)a)->l);
+		printf(")");
 		if(!((CInValExp*)a)->b_flag)
 			printf(" not");
 		printf(" in(");
@@ -182,7 +184,9 @@ void Dumpast(CAst* a)
 	
 	else if(!strcmp(a->whoami(), "CInSelExp"))
 	{
+		printf("(");
 		Dumpast(((CInSelExp*)a)->l);
+		printf(")");
 		if(!((CInSelExp*)a)->b_flag)
 			printf(" not");
 		printf(" in(");
@@ -1743,7 +1747,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 
 	else if(!strcmp(a->whoami(), "CInValExp"))
 	{
+		if(!(strcmp(((CInValExp*)a)->l->whoami(), "CValList")))
+			print_bracket(f, '(');
 		Dumpast_html_recurs(((CInValExp*)a)->l, f, level, a);
+		if(!(strcmp(((CInValExp*)a)->l->whoami(), "CValList")))
+			print_bracket(f, ')');
 		if(!((CInValExp*)a)->b_flag)
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;not</text>");
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
@@ -1751,7 +1759,8 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		print_ident(f, 7.0 + 8.0 * (level));
 		//fprintf(f, "<text class=\"text-brackets\">(</text>");
 		print_bracket(f, '(');
-		Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0 / 8.0, a);
+		//Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0 / 8.0, a);
+		Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0, a);
 		//fprintf(f, "<text class=\"text-brackets\">)</text>");
 		print_bracket(f, ')');
 	}
@@ -1819,9 +1828,13 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		fprintf(f, "<text class=\"text-keyword-control\">join&nbsp;</text>");
 		if( (!strcmp((((CJoin*)a)->tabl)->whoami(), "CJoin") ) )
 			level += 2.0/8.0;
-		Dumpast_html_recurs(((CJoin*)a)->tabl, f, level + dir_type_length + 5.0/8.0, a);
+		else
+			level += dir_type_length + 5.0/8.0;
+		Dumpast_html_recurs(((CJoin*)a)->tabl, f, level , a);
 		if( ( !strcmp((((CJoin*)a)->tabl)->whoami(), "CJoin") ) )
 			level -= 2.0/8.0;
+		else
+			level -= dir_type_length + 5.0/8.0;
 
 		if(((CJoin*)a)->cond != NULL)
 		{
