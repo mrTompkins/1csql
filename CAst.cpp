@@ -110,6 +110,21 @@ char* CAstNULL::whoami() const
 
 CAstNULL::~CAstNULL(){/*debug("~CAstNULL"); debug("~CAstNULL end");*/}
 
+/********* CStmtList *********/
+char* CStmtList::whoami() const
+{
+	return "CStmtList";
+}
+
+CStmtList::~CStmtList()
+{
+	debug("~CStmtList");
+	for(int i = 0; i < l.size(); i++)
+		delete l[i];
+	delete env;
+	debug("~CStmtList end");
+}
+
 /********* CSelect *********/
 
 char* CSelect::whoami() const
@@ -121,13 +136,18 @@ CSelect::~CSelect()
 {
 	debug("~CSelect");
 	delete wth;
+	delete opts;
 	delete sl;
+	delete into;
 	delete tabrefs;
 	delete whr;
 	delete hier;
 	delete hav_grp;
+	delete upd;
 	delete ord;
-	delete env;
+	delete idx;
+	delete total;
+	//delete env;
 	debug("~CSelect end");
 }
 
@@ -168,6 +188,19 @@ CSelExpr::~CSelExpr()
 	debug("~CSelExpr");
 	delete a;
 	debug("~CSelExpr end");
+}
+
+/********* CInto *********/
+char* CInto::whoami() const
+{
+	return "CInto";
+}
+
+CInto::~CInto()
+{
+	debug("~CInto");
+	delete pName;
+	debug("~CInto end");
 }
 
 /********* CTableReferences *********/
@@ -370,6 +403,20 @@ CExpTabSub::~CExpTabSub()
 	debug("~CExpTabSub end");
 }
 
+/********* CSubordTable *********/
+char* CSubordTable::whoami() const
+{
+	return "CSubordTable";
+}
+
+CSubordTable::~CSubordTable()
+{
+	debug("~CSubordTable");
+	delete pName;
+	delete vall;
+	debug("~CSubordTable end");
+}
+
 /********* CCmp *********/
 char* CCmp::whoami() const
 {
@@ -419,6 +466,7 @@ CFcount::~CFcount()
 {
 	debug("~CFcount");
 	delete a;
+	delete opts;
 	debug("~CFcount end");
 }
 
@@ -435,6 +483,20 @@ CFsubstr::~CFsubstr()
 	delete a2;
 	delete a3;
 	debug("~CFsubstr end");
+}
+
+/********* CFexpress *********/
+char* CFexpress::whoami() const
+{
+	return "CFexpress";
+}
+
+CFexpress::~CFexpress()
+{
+	debug("~CFexpress");
+	delete a1;
+	delete a2;
+	debug("~CFexpress end");
 }
 
 /********* CFtrim*********/
@@ -716,6 +778,19 @@ CHavGroup::~CHavGroup()
 	debug("~CHavGroup end");
 }
 
+/********* CForUpdate *********/
+char* CForUpdate::whoami() const
+{
+	return "CForUpdate";
+}
+
+CForUpdate::~CForUpdate()
+{
+	debug("~CForUpdate");
+	delete a;
+	debug("~CForUpdate end");
+}
+
 /********* COrder *********/
 char* COrder::whoami() const
 {
@@ -727,6 +802,33 @@ COrder::~COrder()
 	debug("~COrder");
 	delete a;
 	debug("~COrder end");
+}
+
+/********* CIndexBy *********/
+char* CIndexBy::whoami() const
+{
+	return "CIndexBy";
+}
+
+CIndexBy::~CIndexBy()
+{
+	debug("~CIndexBy");
+	delete a;
+	debug("~CIndexBy end");
+}
+
+/********* CTotal *********/
+char* CTotal::whoami() const
+{
+	return "CTotal";
+}
+
+CTotal::~CTotal()
+{
+	debug("~CTotal");
+	delete a1;
+	delete a2;
+	debug("~CTotal end");
 }
 
 /********* CAnOrderList *********/
@@ -824,6 +926,46 @@ CMinus::~CMinus()
 	debug("~CMinus end");
 }
 
+/********* CUserVar *********/
+char* CUserVar::whoami() const
+{
+	return "CUserVar";
+}
+
+CUserVar::~CUserVar()
+{
+	debug("~CUserVar");
+	delete pName;
+	debug("~CUserVar end");
+}
+
+/********* CSelOpts *********/
+char* CSelOpt::whoami() const
+{
+	return "CSelOpt";
+}
+
+CSelOpt::~CSelOpt()
+{
+	debug("~CSelOpt");
+	delete num;
+	debug("~CSelOpt end");
+}
+
+/********* CSelOpts *********/
+char* CSelOpts::whoami() const
+{
+	return "CSelOpts";
+}
+
+CSelOpts::~CSelOpts()
+{
+	debug("~CSelOpts");
+	for(int i = 0; i < l.size(); i++)
+		delete l[i];
+	debug("~CSelOpts end");
+}
+
 /********* CString *********/
 char* CString::whoami() const
 {
@@ -874,18 +1016,41 @@ CAst* newCAstNULL()
 	return new CAstNULL;
 }
 
+/*** CStmtList ***/
+CAst* newCStmtList(CAst* a)
+{
+	debug("newCStmtList");
+	CStmtList* pStmtList = new CStmtList;
+	pStmtList->l.push_back(a);
+	pStmtList->env = NULL;
+	return pStmtList;
+}
+
+CAst* addtoCStmtList(CAst* stmtl, CAst* a)
+{
+	debug("addtoCStmtList");
+	CStmtList* pStmtList = (CStmtList*)stmtl;
+	pStmtList->l.push_back(a);
+	return pStmtList;
+}
+
 /*** CSelect ***/
-CAst* newCSelect(CAst* wth, CAst* sl, CAst* tabrefs, CAst* whr, CAst* hier, CAst* hav_grp, CAst* ord)
+CAst* newCSelect(CAst* wth, CAst* opts, CAst* sl, CAst* into, CAst* tabrefs, CAst* whr, CAst* hier, CAst* hav_grp, CAst* upd, CAst* ord, CAst* idx, CAst* total)
 {
 	debug("newCSelect");
 	CSelect* pSelect = new CSelect;
 	pSelect->wth = wth;
+	pSelect->opts = opts;
 	pSelect->sl = sl;
+	pSelect->into = into;
 	pSelect->tabrefs = tabrefs;
 	pSelect->whr = whr;
 	pSelect->hier = hier;
 	pSelect->hav_grp = hav_grp;
 	pSelect->ord = ord;
+	pSelect->upd = upd;
+	pSelect->idx = idx;
+	pSelect->total = total;
 	pSelect->env = NULL;
 	return pSelect;
 }
@@ -926,6 +1091,15 @@ CAst* newCSelExpr(CAst* a, char* pszAlias, bool b_quot)
 	lower(sLowAlias);
 	pSelExpr->alias = quot_string(sLowAlias, strAlias, false);
 	return pSelExpr;
+}
+
+/*** newCInto ***/
+CAst* newCInto(CName* pName)
+{
+	debug("newCInto");
+	CInto* pInto = new CInto;
+	pInto->pName = pName;
+	return pInto;
 }
 
 /*** CExprList ***/
@@ -1103,6 +1277,16 @@ CAst* newCExpTabSub(CAst* a)
 	return pExpTabSub;
 }
 
+/*** newCSubordTable ***/
+CAst* newCSubordTable(CName* pName, CAst* vall)
+{
+	debug("newCSubordTable");
+	CSubordTable* pSubordTable= new CSubordTable;
+	pSubordTable->pName = pName;
+	pSubordTable->vall = vall;
+	return pSubordTable;
+}
+
 /*** newCCmp ***/
 CAst* newCCmp(CAst* l, CAst* r, char* pszStr, char* spec)
 {
@@ -1152,12 +1336,13 @@ CAst* newCCall(CName* pName, CAst* vall)
 }
 
 /*** newCFcount ***/
-CAst* newCFcount(CAst* a, bool b_all)
+CAst* newCFcount(CAst* opts, CAst* a, bool b_all)
 {
 	debug("newCFcount");
 	CFcount* pFcount = new CFcount;
 	pFcount->b_all = b_all;
 	pFcount->a = a;
+	pFcount->opts = opts;
 	return pFcount;
 }
 
@@ -1182,6 +1367,16 @@ CAst* newCFtrim(CAst* vall, CAst* a, char* trim_ltb)
 	pFtrim->a = a;
 	pFtrim->trim_ltb = string(trim_ltb==NULL?"":trim_ltb);
 	return pFtrim;
+}
+
+/*** newCFexpress ***/
+CAst* newCFexpress(CAst* a1, CAst* a2)
+{
+	debug("newCFexpress");
+	CFexpress* pFexpress = new CFexpress;
+	pFexpress->a1 = a1;
+	pFexpress->a2 = a2;
+	return pFexpress;
 }
 
 /*** newCInterval ***/
@@ -1431,6 +1626,15 @@ CAst* newCHavGroup(CAst* hav, CAst* grp)
 	return pHavGroup;
 }
 
+/*** newCForUpdate ***/
+CAst* newCForUpdate(CAst* a)
+{
+	debug("newCForUpdate");
+	CForUpdate* pForUpdate = new CForUpdate;
+	pForUpdate->a = a;
+	return pForUpdate;
+}
+
 /*** newCOrder ***/
 CAst* newCOrder(CAst* a)
 {
@@ -1438,6 +1642,25 @@ CAst* newCOrder(CAst* a)
 	COrder* pOrder = new COrder;
 	pOrder->a = a;
 	return pOrder;
+}
+
+/*** newCIndexBy ***/
+CAst* newCIndexBy(CAst* a)
+{
+	debug("newCIndexBy");
+	CIndexBy* pIndexBy = new CIndexBy;
+	pIndexBy->a = a;
+	return pIndexBy;
+}
+
+/*** newCTotal ***/
+CAst* newCTotal(CAst* a1, CAst* a2)
+{
+	debug("newCTotal");
+	CTotal* pTotal = new CTotal;
+	pTotal->a1 = a1;
+	pTotal->a2 = a2;
+	return pTotal;
 }
 
 /*** newCAnOrderList ***/
@@ -1529,6 +1752,42 @@ CAst* newCMinus(CAst* a, char* pszStr)
 	lower(str);
 	pMinus->str = str;
 	return pMinus;
+}
+
+/*** newCUserVar ***/
+CAst* newCUserVar(CName* pName)
+{
+	debug("newCUserVar");
+	CUserVar* pUserVar = new CUserVar;
+	pUserVar->pName = pName;
+	return pUserVar;
+}
+
+/*** newCSelOpt ***/
+CAst* newCSelOpt(char* pszStr, CAst* num)
+{
+	debug("newCSelOpt");
+	CSelOpt* pSelOpt = new CSelOpt;
+	pSelOpt->str = string(pszStr==NULL?"":pszStr);
+	pSelOpt->num = num;
+	return pSelOpt;
+}
+
+/*** newCSelOpts ***/
+CAst* newCSelOpts(CAst* a)
+{
+	debug("newCSelOpts");
+	CSelOpts* pSelOpts = new CSelOpts;
+	pSelOpts->l.push_back(a);
+	return pSelOpts;
+}
+
+CAst* addtoCSelOpts(CAst* Opts, CAst* a)
+{
+	debug("addtoCSelOpts");
+	CSelOpts* pSelOpts = (CSelOpts*)Opts;
+	pSelOpts->l.push_back(a);
+	return pSelOpts;
 }
 
 /*** CString ***/

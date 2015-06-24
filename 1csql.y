@@ -76,6 +76,7 @@ void emit(char *s, ...);
 %token ADD
 %token ALL
 %token ALTER
+%token ALLOWED
 %token ANALYZE
 %token AND
 %token ANY
@@ -145,7 +146,9 @@ void emit(char *s, ...);
 %token <subtok> EXISTS
 %token EXIT
 %token EXPLAIN
+%token FEXPRESS
 %token FETCH
+%token FIRST
 %token FLOAT
 %token FOLLOWING
 %token FOR
@@ -283,6 +286,7 @@ void emit(char *s, ...);
 %token TINYINT
 %token TINYTEXT
 %token TO
+%token TOTAL
 %token TRAILING
 %token TRIGGER
 %token UNBOUNDED
@@ -325,8 +329,9 @@ void emit(char *s, ...);
 %type <a> index_list opt_for_join
 %type <boolval> opt_with_rollup
 
-%type <a> stmt_list stmt select_stmt union_select_stmt opt_where groupby having opt_orderby opt_limit opt_into_list select_expr table_reference table_factor join_table join_condition index_hint table_subquery expr expr_or_subquery func f_count interval_exp opt_with with_list opt_hierarchy connect_by analytic_func analytic opt_partition opt_windowing windowing_bound an_orderby_list an_opt_orderby opt_hav_group
+%type <a> stmt_list stmt opt_select_opts select_opts select_opt select_stmt union_select_stmt opt_where groupby having opt_orderby opt_limit opt_into_list select_expr table_reference table_factor join_table join_condition index_hint table_subquery expr expr_or_subquery func f_count interval_exp opt_with with_list opt_hierarchy connect_by analytic_func analytic opt_partition opt_windowing windowing_bound an_orderby_list an_opt_orderby opt_hav_group
 %type <a> table_subquery_alias table_reference_or_subquery table_references_or_subquery union_or_subquery
+%type <a> opt_total opt_indexed opt_for_update
 %type <qpsz> opt_as_alias
 %type <cname> compose_name
 %type <strval> opt_outer inner_cross left_or_right opt_left_or_right_outer
@@ -337,8 +342,8 @@ void emit(char *s, ...);
 
 %%
 
-stmt_list: stmt ';' { $$ = $1; GAst = $1; }
-  | stmt_list stmt ';' { $$ = newCAstNULL(); }
+stmt_list: stmt ';' { /*$$ = $1;*/ GAst = newCStmtList($1); $$ = GAst; }
+  | stmt_list stmt ';' { $$ = addtoCStmtList($1, $2); }
   ;
 
    /* statements: select statement */
@@ -354,12 +359,12 @@ union_or_subquery : union_select_stmt { $$ = $1; }
    | table_subquery { emit("UNION SUBQUERY"); $$ = newCUnionSub($1); }
    ;
 
-select_stmt: opt_with SELECT select_opts select_expr_list
-                        { emit("SELECTNODATA"); $$ = newCAstNULL(); } ;
-    | opt_with SELECT select_opts select_expr_list opt_into_list
+select_stmt: opt_with SELECT opt_select_opts select_expr_list opt_into_list opt_for_update opt_indexed
+                        { emit("SELECTNODATA"); $$ = newCSelect($1, $3, $4, $5, NULL, NULL, NULL, NULL, $6, NULL, $7, NULL); } ;
+    | opt_with SELECT opt_select_opts select_expr_list opt_into_list
      FROM table_references_or_subquery
-     opt_where opt_hierarchy opt_hav_group opt_orderby opt_limit
-     { emit("SELECT"); $$ = newCSelect($1, $4, $7, $8, $9, $10, $11); } ;
+     opt_where opt_hierarchy opt_hav_group opt_for_update opt_orderby opt_limit opt_indexed opt_total
+     { emit("SELECT"); $$ = newCSelect($1, $3, $4, $5, $7, $8, $9, $10, $11, $12, $14, $15); } ;
 ;
 
 opt_hav_group: /* nil */ { $$ = newCHavGroup(NULL, NULL); }
@@ -385,6 +390,8 @@ opt_where: /* nil */ { $$ = NULL; }
 
 groupby: GROUP BY groupby_list opt_with_rollup
                              { emit("GROUPBYLIST"); $$ =  newCGroup($3, $4); }
+   | GROUP ON groupby_list opt_with_rollup
+                             { emit("GROUPBYLIST"); $$ =  newCGroup($3, $4); }
 ;
 
 groupby_list: expr opt_asc_desc
@@ -404,9 +411,23 @@ opt_with_rollup: /* nil */  { $$ = false; }
 
 having: HAVING expr { emit("HAVING"); $$ = newCHaving($2); };
 
-opt_orderby: /* nil */ { $$ = NULL; } | ORDER BY groupby_list { emit("ORDERBY"); $$ = newCOrder($3); }
+opt_for_update: /* nil */  { $$ = NULL; }
+   | FOR UPDATE groupby_list { emit("FORUPDATE"); $$ = newCForUpdate($3); }
    ;
-   
+
+opt_orderby: /* nil */ { $$ = NULL; }
+   | ORDER BY groupby_list { emit("ORDERBY"); $$ = newCOrder($3); }
+   | ORDER ON groupby_list { emit("ORDERBY"); $$ = newCOrder($3); }
+   ;
+
+opt_indexed: /* nil */  { $$ = NULL; }
+   | INDEX BY groupby_list { emit("INDEXBY"); $$ = newCIndexBy($3); }
+   | INDEX ON groupby_list { emit("INDEXBY"); $$ = newCIndexBy($3); }
+   ;
+
+opt_total: /* nil */ { $$ = NULL; }
+   | TOTAL groupby_list ON groupby_list { emit("TOTAL"); $$ = newCTotal($2, $4); }
+   ;
 
 an_orderby_list: expr opt_asc_desc
                              { emit("ANALYTIC ORDER LIST"); $$ = newCAnOrderList($1, $2); }
@@ -426,23 +447,32 @@ compose_name: NAME { $$ = newCName($1->psz, $1->b_quot); delete $1; }
    ;
 
 opt_into_list: /* nil */ { $$ = NULL; }
-   | INTO column_list { emit("INTO"); $$ = newCAstNULL(); }
+   | INTO NAME { emit("INTO"); $$ = newCInto(newCName($2->psz, $2->b_quot)); delete $2; }
    ;
 
 column_list: NAME { emit("COLUMN"); $$ = newCExprList(newCField(newCName($1->psz, $1->b_quot)), false); delete $1; }
    | column_list ',' NAME  { emit("COLUMN"); $$ = addtoCExprList($1, newCField(newCName($3->psz, $3->b_quot))); delete $3; }
    ;
 
-select_opts:  /* nil */ 		  { }
-| select_opts ALL                 { }
-| select_opts DISTINCT            { }
-| select_opts DISTINCTROW         { }
-| select_opts HIGH_PRIORITY       { }
-| select_opts STRAIGHT_JOIN       { }
-| select_opts SQL_SMALL_RESULT    { }
-| select_opts SQL_BIG_RESULT      { }
-| select_opts SQL_CALC_FOUND_ROWS { }
+select_opt: ALL            { $$ = newCSelOpt("all", NULL); }
+   | ALLOWED			   { $$ = newCSelOpt("allowed", NULL); }
+   | DISTINCT              { $$ = newCSelOpt("distinct", NULL); }
+   | DISTINCTROW           { $$ = newCAstNULL(); }
+   | FIRST INTNUM		   { $$ = newCSelOpt("first", newCNumber($2)); }
+   | HIGH_PRIORITY         { $$ = newCAstNULL(); }
+   | STRAIGHT_JOIN         { $$ = newCAstNULL(); }
+   | SQL_SMALL_RESULT      { $$ = newCAstNULL(); }
+   | SQL_BIG_RESULT        { $$ = newCAstNULL(); }
+   | SQL_CALC_FOUND_ROWS   { $$ = newCAstNULL(); }
+   ;
+
+select_opts:  select_opt	  { $$ = newCSelOpts($1); }
+	| select_opts select_opt  { $$ = addtoCSelOpts($1, $2); }
     ;
+	
+opt_select_opts:   /* nil */      { $$ = NULL; }
+    | select_opts  { $$ = $1; }
+	;
 
 select_expr_list: select_expr { $$ = newCExprList($1, true); }
     | select_expr_list ',' select_expr {$$ = addtoCExprList($1, $3); }
@@ -566,7 +596,7 @@ with_list: NAME AS table_subquery { $$ = newCWithList($3, newCName($1->psz, $1->
 
    /**** expressions ****/
 
-expr: USERVAR         { emit("USERVAR %s", $1); $$ = newCField(newCName($1, false)); free($1); }
+expr: USERVAR         { emit("USERVAR %s", $1); $$ = newCUserVar(newCName($1, false)); free($1); }
    | compose_name  { emit("FIELDNAME"); $$ = newCField($1); }
    | STRING        { emit("STRING %s", $1); $$ = newCString($1); free($1); }
    | INTNUM        { emit("NUMBER %d", $1); $$ = newCNumber($1); }
@@ -617,21 +647,39 @@ expr:  expr_or_subquery IS NULLX     { emit("ISNULL"); $$ = newCIsExp($1, true, 
 expr: expr_or_subquery BETWEEN expr_or_subquery AND expr_or_subquery %prec BETWEEN { emit("BETWEEN"); $$ = newCBtwnExp($1, $3, $5); }
    ;
 
-val_list: expr { $$ = newCValList($1); }
-   | NULLX { $$ = newCValList(newCNull()); }
-   | val_list',' expr_or_subquery  { $$ = addtoCValList($1, $3); }
-   | table_subquery',' expr_or_subquery { $$ = addtoCValList(newCValList(newCExpTabSub($1)), $3); }
+/*val_list: ',' { $$ = newCValList(); }
+   | expr opt_as_alias { $$ = newCValList($1); }
+   | NULLX opt_as_alias { $$ = newCValList(newCNull()); }
+   | val_list',' expr_or_subquery opt_as_alias  { $$ = addtoCValList($1, $3); }
+   | table_subquery opt_as_alias',' expr_or_subquery opt_as_alias { $$ = addtoCValList(newCValList(newCExpTabSub($1)), $4); }
+   | val_list',' { $$ = $1; }
    ;
-
-opt_val_list: /* nil */ { $$ = newCValList(); }
+   
+opt_val_list:  nil  { $$ = newCValList(); }
    | val_list { $$ = $1; }
+   ;*/
+   
+val_list: /* nil */ { $$ = newCValList(); }
+   | expr opt_as_alias { $$ = newCValList($1); }
+   | NULLX opt_as_alias { $$ = newCValList(newCNull()); }
+   | val_list',' expr_or_subquery opt_as_alias  { $$ = addtoCValList($1, $3); }
+   | table_subquery opt_as_alias',' expr_or_subquery opt_as_alias { $$ = addtoCValList(newCValList(newCExpTabSub($1)), $4); }
+   | val_list',' { $$ = $1; }
    ;
 
-expr: expr_or_subquery IN '(' val_list ')'       { emit("ISIN"); $$ = newCInValExp($1, $4, true); }
+opt_val_list:  /*nil  { $$ = newCValList(); }
+   |*/ val_list { $$ = $1; }
+   ;
+
+expr: /*'(' val_list ')' IN '(' val_list ')'       { emit("ISIN"); $$ = newCInValExp($2, $6, true); }
+   | */expr_or_subquery IN '(' val_list ')'       { emit("ISIN"); $$ = newCInValExp($1, $4, true); }
    | expr_or_subquery NOT IN '(' val_list ')'    { emit("ISIN"); emit("NOT"); $$ = newCInValExp($1, $5, false); }
    | expr_or_subquery IN '(' union_select_stmt ')'     { emit("INSELECT"); $$ = newCInSelExp($1, $4, true); }
    | expr_or_subquery NOT IN table_subquery { emit("INSELECT"); emit("NOT"); $$ = newCInSelExp($1, $4, false); }
    | EXISTS table_subquery      { emit("EXISTS"); if($1)emit("NOT"); $$ = newCExistsExp($2, !$1); }
+   ;
+   
+expr: compose_name '.' '(' opt_val_list ')' {  emit("SUBORDTABLE"); $$ = newCSubordTable($1, $4); }
    ;
    
 func: compose_name '(' opt_val_list ')' {  emit("CALL"); $$ = newCCall($1, $3); }
@@ -670,8 +718,8 @@ windowing_bound: UNBOUNDED PRECEDING { $$ = newCWndBound(NULL, "unbounded", "pre
    ;
 
   /* functions with special syntax */
-f_count: FCOUNT '(' '*' ')' { emit("COUNTALL"); $$ = newCFcount(NULL, true); }
-   | FCOUNT '(' expr_or_subquery ')' { emit(" CALL 1 COUNT"); $$ = newCFcount($3, false); } 
+f_count: FCOUNT '(' '*' ')' { emit("COUNTALL"); $$ = newCFcount(NULL, NULL, true); }
+   | FCOUNT '(' opt_select_opts expr_or_subquery ')' { emit(" CALL 1 COUNT"); $$ = newCFcount($3, $4, false); } 
    ;
    
 expr: f_count { $$ = $1; };
@@ -679,8 +727,9 @@ expr: f_count { $$ = $1; };
 expr: FSUBSTRING '(' val_list ')' {  emit("CALL SUBSTR"); $$ = newCFsubstr($3, NULL, NULL, 1);}
    | FSUBSTRING '(' expr_or_subquery FROM expr_or_subquery ')' {  emit("CALL 2 SUBSTR"); $$ = newCFsubstr($3, $5, NULL, 2); }
    | FSUBSTRING '(' expr_or_subquery FROM expr_or_subquery FOR expr_or_subquery ')' {  emit("CALL 3 SUBSTR"); $$ = newCFsubstr($3, $5, $7, 3); }
-| FTRIM '(' val_list ')' { emit("CALL TRIM"); $$ = newCFtrim($3, NULL, NULL); }
+   | FTRIM '(' val_list ')' { emit("CALL TRIM"); $$ = newCFtrim($3, NULL, NULL); }
    | FTRIM '(' trim_ltb expr_or_subquery FROM val_list ')' { emit("CALL 3 TRIM"); $$ = newCFtrim($6, $4, $3); }
+   | FEXPRESS '(' expr_or_subquery AS expr_or_subquery ')'  { emit("CALL FEXPRESS"); $$ = newCFexpress($3, $5); }
    ;
 
 trim_ltb: LEADING { emit("INT 1"); $$ = "leading"; }

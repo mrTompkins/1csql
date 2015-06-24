@@ -34,6 +34,9 @@ std::vector<int> oldstate;
 
 ADD	{ return ADD; }
 ALL	{ return ALL; }
+[Ââ][Ññ][Åå]	{ return ALL; }
+ALLOWED	{ return ALLOWED; }
+[Ðð][Àà][Çç][Ðð][Åå][Øø][Åå][Íí][Íí][Ûû][Åå]	{ return ALLOWED; }
 ALTER	{ return ALTER; }
 ANALYZE	{ return ANALYZE; }
 
@@ -41,13 +44,18 @@ ANALYZE	{ return ANALYZE; }
    * return special AND token if BETWEEN seen
    */
 <BTWMODE>AND	{ BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); return AND; }
+<BTWMODE>[Èè]	{ BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); return AND; }
 AND	{ yylval.strval = strdup(yytext); return ANDOP; }
+[Èè]	{ yylval.strval = strdup("and"); return ANDOP; }
 ANY     { return ANY; }
 AS	{ return AS; }
+[Êê][Àà][Êê]	{ return AS; }
 ASC	{ return ASC; }
+[Ââ][Îî][Çç][Ðð]	{ return ASC; }
 AUTO_INCREMENT	{ return AUTO_INCREMENT; }
 BEFORE	{ return BEFORE; }
 BETWEEN	{ oldstate.push_back(YY_START); BEGIN BTWMODE; return BETWEEN; }
+[Ìì][Åå][Ææ][Ää][Óó]	{ oldstate.push_back(YY_START); BEGIN BTWMODE; return BETWEEN; }
 INT8|BIGINT	{ return BIGINT; }
 BINARY	{ return BINARY; }
 BIT	{ return BIT; }
@@ -57,6 +65,7 @@ BY	{ return BY; }
 CALL	{ return CALL; }
 CASCADE	{ return CASCADE; }
 CASE	{ return CASE; }
+[Ââ][Ûû][Áá][Îî][Ðð]	{ return CASE; }
 CHANGE	{ return CHANGE; }
 CHAR(ACTER)?	{ return CHAR; }
 CHECK	{ return CHECK; }
@@ -70,6 +79,7 @@ CONTINUE	{ return CONTINUE; }
 CONVERT	{ return CONVERT; }
 CREATE	{ return CREATE; }
 CROSS	{ return CROSS; }
+[Ïï][Îî][Ëë][Íí][Îî][Åå]	{ return CROSS; }
 CURRENT_DATE	{ return CURRENT_DATE; }
 CURRENT_TIME	{ return CURRENT_TIME; }
 CURRENT_TIMESTAMP	{ return CURRENT_TIMESTAMP; }
@@ -91,17 +101,21 @@ DEFAULT	{ return DEFAULT; }
 DELAYED	{ return DELAYED; }
 DELETE	{ return DELETE; }
 DESC	{ return DESC; }
+[Óó][Áá][Ûû][Ââ]	{ return DESC; }
 DESCRIBE	{ return DESCRIBE; }
 DETERMINISTIC	{ return DETERMINISTIC; }
 DISTINCT	{ return DISTINCT; }
+[Ðð][Àà][Çç][Ëë][Èè][×÷][Íí][Ûû][Åå]	{ return DISTINCT; }
 DISTINCTROW	{ return DISTINCTROW; }
 DIV	{ return DIV; }
 FLOAT8|DOUBLE	{ return DOUBLE; }
 DROP	{ return DROP; }
 EACH	{ return EACH; }
 ELSE	{ return ELSE; }
+[Èè][Íí][Àà][×÷][Åå]	{ return ELSE; }
 ELSEIF	{ return ELSEIF; }
 END	{ return END; }
+[Êê][Îî][Íí][Åå][Öö]	{ return END; }
 ENUM { return ENUM; }
 ESCAPED	{ return ESCAPED; }
 EXISTS	{ yylval.subtok = 0; return EXISTS; }
@@ -109,16 +123,22 @@ NOT[ \t\n]+EXISTS	{ yylval.subtok = 1; return EXISTS; }
 EXIT	{ return EXIT; }
 EXPLAIN	{ return EXPLAIN; }
 FETCH	{ return FETCH; }
+FIRST	{ return FIRST; }
+[Ïï][Åå][Ðð][Ââ][Ûû][Åå]	{ return FIRST; }
 FLOAT4?	{ return FLOAT; }
 FOLLOWING { return FOLLOWING; }
 FOR	{ return FOR; }
+[Ää][Ëë][ßÿ]	{ return FOR; }
 FORCE	{ return FORCE; }
 FOREIGN	{ return FOREIGN; }
 FROM	{ return FROM; }
+[Èè][Çç]	{ return FROM; }
 FULLTEXT	{ return FULLTEXT; }
 GRANT	{ return GRANT; }
 GROUP	{ return GROUP; }
+[Ññ][Ãã][Ðð][Óó][Ïï][Ïï][Èè][Ðð][Îî][Ââ][Àà][Òò][Üü]	{ return GROUP; }
 HAVING	{ return HAVING; }
+[Èè][Ìì][Åå][Þþ][Ùù][Èè][Åå]	{ return HAVING; }
 HIGH_PRIORITY	{ return HIGH_PRIORITY; }
 HOUR	{ return HOUR; }
 HOUR_MICROSECOND	{ return HOUR_MICROSECOND; }
@@ -127,25 +147,34 @@ HOUR_SECOND	{ return HOUR_SECOND; }
 IF	{ return IF; }
 IGNORE	{ return IGNORE; }
 IN	{ return IN; }
+[Ââ]	{ return IN; }
 INFILE	{ return INFILE; }
 INNER	{ return INNER; }
+[Ââ][Íí][Óó][Òò][Ðð][Åå][Íí][Íí][Åå][Åå]	{ return INNER; }
 INOUT	{ return INOUT; }
 INSENSITIVE	{ return INSENSITIVE; }
 INSERT	{ return INSERT; }
 INT4?|INTEGER	{ return INTEGER; }
 INTERVAL	{ return INTERVAL; }
 INTO	{ return INTO; }
+[Ïï][Îî][Ìì][Åå][Ññ][Òò][Èè][Òò][Üü]	{ return INTO; }
 INTERSECT { yylval.strval = strdup(yytext); return UNION; }
 IS	{ return IS; }
+[Åå][Ññ][Òò][Üü]	{ return IS; }
 ITERATE	{ return ITERATE; }
 JOIN	{ return JOIN; }
-INDEX|KEY	{ return KEY; }
+[Ññ][Îî][Åå][Ää][Èè][Íí][Åå][Íí][Èè][Åå]	{ return JOIN; }
+KEY	{ return KEY; }
+INDEX	{ return INDEX; }
+[Èè][Íí][Ää][Åå][Êê][Ññ][Èè][Ðð][Îî][Ââ][Àà][Òò][Üü]	{ return INDEX; }
 KEYS	{ return KEYS; }
 KILL	{ return KILL; }
 LEADING	{ return LEADING; }
 LEAVE	{ return LEAVE; }
 LEFT	{ return LEFT; }
+[Ëë][Åå][Ââ][Îî][Åå]	{ return LEFT; }
 LIKE	{ return LIKE; }
+[Ïï][Îî][Ää][Îî][Áá][Íí][Îî]	{ return LIKE; }
 LIMIT	{ return LIMIT; }
 LINES	{ return LINES; }
 LOAD	{ return LOAD; }
@@ -171,19 +200,24 @@ MONTH	{ return MONTH; }
 NATURAL	{ return NATURAL; }
 NONCYCLE	{ return NONCYCLE; }
 NOT	{ return NOT; }
+[Íí][Åå]	{ return NOT; }
 NO_WRITE_TO_BINLOG	{ return NO_WRITE_TO_BINLOG; }
 NULL	{ return NULLX; }
 NUMBER	{ return NUMBER; }
 ON	{ return ON; }
+[Ïï][Îî]	{ return ON; }
 ON[ \t\n]+DUPLICATE { return ONDUPLICATE; } /* hack due to limited lookahead */
 OPTIMIZE	{ return OPTIMIZE; }
 OPTION	{ return OPTION; }
 OPTIONALLY	{ return OPTIONALLY; }
 OR	{ yylval.strval = strdup(yytext); return OR; }
+[Èè][Ëë][Èè]	{ yylval.strval = strdup("or"); return OR; }
 ORDER	{ return ORDER; }
+[Óó][Ïï][Îî][Ðð][ßÿ][Ää][Îî][×÷][Èè][Òò][Üü]	{ return ORDER; }
 OVER	{ return OVER; }
 OUT	{ return OUT; }
 OUTER	{ return OUTER; }
+[Ââ][Íí][Åå][Øø][Íí][Åå][Åå]	{ return OUTER; }
 OUTFILE	{ return OUTFILE; }
 PARTITION { return PARTITION; }
 PRECEDING { return PRECEDING; }
@@ -208,6 +242,7 @@ RESTRICT	{ return RESTRICT; }
 RETURN	{ return RETURN; }
 REVOKE	{ return REVOKE; }
 RIGHT	{ return RIGHT; }
+[Ïï][Ðð][Àà][Ââ][Îî][Åå]	{ return RIGHT; }
 ROLLUP	{ return ROLLUP; }
 ROWS	{ return ROWS; }
 ROW		{ return ROW; }
@@ -216,6 +251,7 @@ SCHEMAS	{ return SCHEMAS; }
 SECOND  { return SECOND; }
 SECOND_MICROSECOND	{ return SECOND_MICROSECOND; }
 SELECT	{ return SELECT; }
+[Ââ][Ûû][Áá][Ðð][Àà][Òò][Üü] 	{ return SELECT; }
 SENSITIVE	{ return SENSITIVE; }
 SEPARATOR	{ return SEPARATOR; }
 SET	{ return SET; }
@@ -241,21 +277,27 @@ TEMPORARY	{ return TEMPORARY; }
 TERMINATED	{ return TERMINATED; }
 TEXT	{ return TEXT; }
 THEN	{ return THEN; }
+[Òò][Îî][Ãã][Ää][Àà]	{ return THEN; }
 TIME	{ return TIME; }
 TIMESTAMP	{ return TIMESTAMP; }
 INT1|TINYINT	{ return TINYINT; }
 TINYTEXT	{ return TINYTEXT; }
 TO	{ return TO; }
+TOTAL	{ return TOTAL; }
+[Èè][Òò][Îî][Ãã][Èè]	{ return TOTAL; }
 TRAILING	{ return TRAILING; }
 TRIGGER	{ return TRIGGER; }
 UNDO	{ return UNDO; }
 UNBOUNDED { return UNBOUNDED; }
 UNION	{ yylval.strval = strdup(yytext); return UNION; }
+[Îî][Áá][Úú][Åå][Ää][Èè][Íí][Èè][Òò][Üü]	{ yylval.strval = strdup("union"); return UNION; }
 UNION[ \t\n]+ALL	{ yylval.strval = strdup(yytext); return UNION; }
+[Îî][Áá][Úú][Åå][Ää][Èè][Íí][Èè][Òò][Üü][ \t\n]+[Ââ][Ññ][Åå]	{ yylval.strval = strdup("union all"); return UNION; }
 UNIQUE	{ return UNIQUE; }
 UNLOCK	{ return UNLOCK; }
 UNSIGNED	{ return UNSIGNED; }
 UPDATE	{ return UPDATE; }
+[Èè][Çç][Ìì][Åå][Íí][Åå][Íí][Èè][ßÿ]	{ return UPDATE; }
 USAGE	{ return USAGE; }
 USE	{ return USE; }
 USING	{ return USING; }
@@ -267,7 +309,9 @@ VARBINARY	{ return VARBINARY; }
 VARCHAR(ACTER)?	{ return VARCHAR; }
 VARYING	{ return VARYING; }
 WHEN	{ return WHEN; }
+[Êê][Îî][Ãã][Ää][Àà]	{ return WHEN; }
 WHERE	{ return WHERE; }
+[Ãã][Ää][Åå]	{ return WHERE; }
 WHILE	{ return WHILE; }
 WITH	{ return WITH; }
 WRITE	{ return WRITE; }
@@ -294,7 +338,7 @@ FALSE	{ yylval.boolval = false; return BOOL; }
    /* strings */
 
 '(\\.|''|[^'\n])*'		{ yylval.strval = strdup(yytext); return STRING; }
-\"(\\.|\"\"|[^"\n])*\"  { yylval.qpsz = newQuot_psz(true); yylval.qpsz->psz = (char*)malloc(strlen(yytext)-1); memset(yylval.qpsz->psz, '\0', strlen(yytext)-1); strncpy(yylval.qpsz->psz, yytext+1, strlen(yytext)-2); return NAME; }
+\"(\\.|\"\"|[^"\n])*\"  { yylval.strval = strdup(yytext); return STRING; }
 
 '(\\.|[^'\n])*$	        { yyerror("Unterminated string %s", yytext); }
 \"(\\.|[^"\n])*$	{ yyerror("Unterminated string %s", yytext); }
@@ -313,9 +357,10 @@ B'[01]+'     { yylval.strval = strdup(yytext); return STRING; }
 <DOT_NAME>[A-Za-zÀ-ßà-ÿ][A-Za-zÀ-ßà-ÿ0-9_$]* { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(yytext, false); return NAME; }
 <DOT_NAME>\"(\\.|\"\"|[^"\n])*\" { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(true); yylval.qpsz->psz = (char*)malloc(strlen(yytext)-1); memset(yylval.qpsz->psz, '\0', strlen(yytext)-1); strncpy(yylval.qpsz->psz, yytext+1, strlen(yytext)-2); return NAME; }
 <DOT_NAME>"*" { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); yylval.qpsz = newQuot_psz(yytext, false); return NAME; }
+<DOT_NAME>"(" { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); return '('; }
 
    /* operators */
-[-+&~|^/%*(),.;!]   { return yytext[0]; }
+[-+~|^/%*(),.;!]   { return yytext[0]; }
 
 "&&"		{ return ANDOP; }
 "||"            { return CONCAT; }
@@ -341,14 +386,10 @@ SUBSTR(ING)?/"(" { return FSUBSTRING; }
 TRIM/"(" { return FTRIM; }
 DATE_ADD/"(" { return FDATE_ADD; }
 DATE_SUB/"(" { return FDATE_SUB; }
+[Ââ][Ûû][Ðð][Àà][Çç][Èè][Òò][Üü]/"(" { return FEXPRESS; }
+COUNT/"(" { return FCOUNT; }
+[Êê][Îî][Ëë][Èè][×÷][Åå][Ññ][Òò][Ââ][Îî]/"(" { return FCOUNT; }
 
-	/* 
-         * peek ahead and return function if name(
-         */
-COUNT    { int c = yyinput(); unput(c);
-           if(c == '(') return FCOUNT;
-           yylval.qpsz = newQuot_psz(yytext, false);
-           return NAME; }
 
 [A-Za-zÀ-ßà-ÿ][A-Za-zÀ-ßà-ÿ0-9_$]*	{ yylval.qpsz = newQuot_psz(yytext, false);
                           return NAME; }
@@ -359,6 +400,7 @@ COUNT    { int c = yyinput(); unput(c);
 `[^`\n]*$               { yyerror("unterminated quoted name %s", yytext); }
 
 	/* user variables */
+"&"[A-Za-zÀ-ßà-ÿ][A-Za-zÀ-ßà-ÿ0-9_$]+ |
 @[0-9a-z_.$]+ |
 @\"[^"\n]+\" |
 @`[^`\n]+` |
@@ -374,6 +416,7 @@ COUNT    { int c = yyinput(); unput(c);
 	/* comments */   
 #.*		;
 "--".*	;
+"//".*	;
 
 "/*"   { oldstate.push_back(YY_START); BEGIN COMMENT; }
 <COMMENT>"*/"   { BEGIN oldstate[oldstate.size()-1]; oldstate.pop_back(); }

@@ -31,17 +31,32 @@ public:
 	virtual ~CAstNULL();
 };
 
+/********* CStmtList *********/
+class CStmtList: public CAst
+{
+public:
+	vector<CAst*> l;
+	CEnv* env;
+	virtual char* whoami() const;
+	~CStmtList();
+};
+
 /********* CSelect *********/
 class CSelect: public CAst
 {
 public:
 	CAst* wth;
+	CAst* opts;
 	CAst* sl;
+	CAst* into;
 	CAst* tabrefs;
 	CAst* whr;
 	CAst* hier;
 	CAst* hav_grp;
+	CAst* upd;
 	CAst* ord;
+	CAst* idx;
+	CAst* total;
 	CEnv* env;
 	virtual char* whoami() const;
 	~CSelect();
@@ -78,6 +93,16 @@ public:
 	bool b_quot;
 	virtual char* whoami() const;
 	~CSelExpr();
+};
+
+/********* CInto *********/
+class CInto: public CAst
+{
+public:
+	CName* pName;
+	CSymbol* sym;
+	virtual char* whoami() const;
+	~CInto();
 };
 
 /********* CExprList *********/
@@ -238,6 +263,16 @@ public:
 	~CExpTabSub();
 };
 
+/********* CSubordTable *********/
+class CSubordTable: public CAst
+{
+public:
+	CName* pName;
+	CAst* vall;
+	virtual char* whoami() const;
+	~CSubordTable();
+};
+
 /********* CCmp *********/
 class CCmp: public CExp
 {
@@ -272,6 +307,7 @@ class CFcount: public CAst
 public:
 	bool b_all;
 	CAst* a;
+	CAst* opts;
 	virtual char* whoami() const;
 	~CFcount();
 };
@@ -286,6 +322,16 @@ public:
 	CAst* a3;
 	virtual char* whoami() const;
 	~CFsubstr();
+};
+
+/********* CFexpress *********/
+class CFexpress: public CAst
+{
+public:
+	CAst* a1;
+	CAst* a2;
+	virtual char* whoami() const;
+	~CFexpress();
 };
 
 /********* CFtrim*********/
@@ -504,6 +550,15 @@ public:
 	~CHavGroup();
 };
 
+/********* CForUpdate *********/
+class CForUpdate: public CAst
+{
+public:
+	CAst* a;
+	virtual char* whoami() const;
+	~CForUpdate();
+};
+
 /********* COrder *********/
 class COrder: public CAst
 {
@@ -511,6 +566,25 @@ public:
 	CAst* a;
 	virtual char* whoami() const;
 	~COrder();
+};
+
+/********* CIndexBy *********/
+class CIndexBy: public CAst
+{
+public:
+	CAst* a;
+	virtual char* whoami() const;
+	~CIndexBy();
+};
+
+/********* CTotal *********/
+class CTotal: public CAst
+{
+public:
+	CAst* a1;
+	CAst* a2;
+	virtual char* whoami() const;
+	~CTotal();
 };
 
 /********* CAnOrderList *********/
@@ -579,6 +653,34 @@ public:
 	~CMinus();
 };
 
+/********* CUserVar *********/
+class CUserVar: public CAst
+{
+public:
+	CName* pName;
+	virtual char* whoami() const;
+	~CUserVar();
+};
+
+/********* CSelOpt *********/
+class CSelOpt: public CAst
+{
+public:
+	string str;
+	CAst* num;
+	virtual char* whoami() const;
+	~CSelOpt();
+};
+
+/********* CSelOpts *********/
+class CSelOpts: public CAst
+{
+public:
+	vector<CAst*> l;
+	virtual char* whoami() const;
+	~CSelOpts();
+};
+
 /********* CString *********/
 class CString: public CAst
 {
@@ -626,10 +728,13 @@ public:
 /********* newFunctions *********/
 
 CAst* newCAstNULL();
-CAst* newCSelect(CAst* wth, CAst* sl, CAst* tabrefs, CAst* whr, CAst* hier, CAst* hav_grp, CAst*);
+CAst* newCStmtList(CAst* a);
+CAst* addtoCStmtList(CAst* stmtl, CAst* a);
+CAst* newCSelect(CAst* wth, CAst* opts, CAst* sl, CAst* into, CAst* tabrefs, CAst* whr, CAst* hier, CAst* hav_grp, CAst* upd, CAst* ord,  CAst* idx, CAst* total);
 CAst* newCTable(CName* pName, char* pszAlias, bool b_quot);
 CAst* newCField(CName* pName);
 CAst* newCSelExpr(CAst* a, char* pszAlias, bool b_quot);
+CAst* newCInto(CName* pName);
 CAst* newCExprList(CAst* a, bool b_vert);
 CAst* addtoCExprList(CAst* exprl, CAst* a);
 CAst* newCWhere(CAst* a);
@@ -645,14 +750,16 @@ CAst* newCJoinCond(CAst* a, char* type);
 CAst* newCTabSub(CAst* a, char* pszAlias, bool b_quot);
 CAst* newCSelTabSub(CAst* a, char* pszAlias, bool b_quot);
 CAst* newCExpTabSub(CAst* a);
+CAst* newCSubordTable(CName* pName, CAst* vall);
 CAst* newCCmp(CAst* l, CAst* r, char* pszStr, char* spec);
 CAst* newCValList();
 CAst* newCValList(CAst* a);
 CAst* addtoCValList(CAst* vall, CAst* a);
 CAst* newCCall(CName* pName, CAst* vall);
-CAst* newCFcount(CAst* a, bool b_all);
+CAst* newCFcount(CAst* opts, CAst* a, bool b_all);
 CAst* newCFsubstr(CAst* a1, CAst* a2, CAst* a3, int type);
 CAst* newCFtrim(CAst* vall, CAst* a, char* trim_ltb);
+CAst* newCFexpress(CAst* a1, CAst* a2);
 CAst* newCInterval(char* intrvl, char* time);
 CAst* newCCase(CAst* a, CAst* cl, CAst* el);
 CAst* newCCaseList(CAst* a1, CAst* a2);
@@ -676,7 +783,10 @@ CAst* addtoCGroupList(CAst* gl, CAst* a, char* pszStr);
 CAst* newCGroup(CAst* a, bool b_rollup);
 CAst* newCHaving(CAst* a);
 CAst* newCHavGroup(CAst* hav, CAst* grp);
+CAst* newCForUpdate(CAst* a);
 CAst* newCOrder(CAst* a);
+CAst* newCIndexBy(CAst* a);
+CAst* newCTotal(CAst* a1, CAst* a2);
 CAst* newCAnOrderList(CAst* a, char* pszStr);
 CAst* addtoCAnOrderList(CAst* gl, CAst* a, char* pszStr);
 CAst* newCAnOrder(CAst* a);
@@ -685,6 +795,10 @@ CAst* newCTabBrac(CAst* a);
 CAst* newCExpBrac(CAst* a);
 CAst* newCNot(CAst* a, char* pszStr);
 CAst* newCMinus(CAst* a, char* pszStr);
+CAst* newCUserVar(CName* pName);
+CAst* newCSelOpt(char* pszStr, CAst* num);
+CAst* newCSelOpts(CAst* a);
+CAst* addtoCSelOpts(CAst* Opts, CAst* a);
 CAst* newCString(char* psz);
 CAst* newCNumber(int n);
 CAst* newCFloat(double d);

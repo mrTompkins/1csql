@@ -71,6 +71,7 @@ int main(int ac, char **av)
 	FILE* fhtml;
 
 	setlocale(LC_ALL, "Russian");
+	setlocale(LC_NUMERIC, "American");
 
 	if(ac > 1 && !strcmp(av[1], "-d")) {
 		yydebug = 1; ac--; av++;

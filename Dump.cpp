@@ -28,7 +28,16 @@ void Dumpast(CAst* a)
 		a = (CAst*)(&nullAst);
 	}
 
-	if(!strcmp(a->whoami(), "CSelect"))
+	if(!strcmp(a->whoami(), "CStmtList"))
+	{
+		for(int i = 0; i < ((CStmtList*)a)->l.size(); i++)
+		{
+			Dumpast(((CStmtList*)a)->l[i]);
+			printf(";\n\n");
+		}
+	}
+
+	else if(!strcmp(a->whoami(), "CSelect"))
 	{
 		if(((CSelect*)a)->wth != NULL)
 		{
@@ -36,9 +45,20 @@ void Dumpast(CAst* a)
 			Dumpast(((CSelect*)a)->wth);
 		}
 		printf("\nselect ");
-		Dumpast(((CSelect*)a)->sl);
+		if(((CSelect*)a)->opts != NULL)
+		{
+			Dumpast(((CSelect*)a)->opts);
+		}
+		if(((CSelect*)a)->sl != NULL)
+		{
+			Dumpast(((CSelect*)a)->sl);
+		}
 		printf("\n from ");
 		Dumpast(((CSelect*)a)->tabrefs);
+		if(((CSelect*)a)->into != NULL)
+		{
+			Dumpast(((CSelect*)a)->into);
+		}
 		if(((CSelect*)a)->whr != NULL)
 		{
 			printf("\n where ");
@@ -52,9 +72,21 @@ void Dumpast(CAst* a)
 		{
 			Dumpast(((CSelect*)a)->hav_grp);
 		}
+		if(((CSelect*)a)->upd != NULL)
+		{
+			Dumpast(((CSelect*)a)->upd);
+		}
 		if(((CSelect*)a)->ord != NULL)
 		{
 			Dumpast(((CSelect*)a)->ord);
+		}
+		if(((CSelect*)a)->idx != NULL)
+		{
+			Dumpast(((CSelect*)a)->idx);
+		}
+		if(((CSelect*)a)->total != NULL)
+		{
+			Dumpast(((CSelect*)a)->total);
 		}
 	}
 
@@ -89,6 +121,12 @@ void Dumpast(CAst* a)
 			if(((CSelExpr*)a)->b_quot)
 				printf("\"");
 		}
+	}
+
+	else if(!strcmp(a->whoami(), "CInto"))
+	{
+		printf("\ninto ");
+		Dumpast(((CInto*)a)->pName);
 	}
 	
 	else if(!strcmp(a->whoami(), "CExprList"))
@@ -238,6 +276,15 @@ void Dumpast(CAst* a)
 		Dumpast(((CExpTabSub*)a)->a);
 		printf(")");
 	}
+
+	else if (!strcmp(a->whoami(), "CSubordTable"))
+	{
+		Dumpast(((CSubordTable*)a)->pName);
+		printf(".");
+		printf("(");
+		Dumpast(((CSubordTable*)a)->vall);
+		printf(")");
+	}
 	
 	else if(!strcmp(a->whoami(), "CCmp"))
 	{
@@ -275,6 +322,10 @@ void Dumpast(CAst* a)
 		else
 		{
 			printf("count(");
+			if(((CFcount*)a)->opts != NULL)
+			{
+				Dumpast(((CFcount*)a)->opts);
+			}
 			Dumpast(((CFcount*)a)->a);
 			printf(")");
 		}
@@ -303,6 +354,15 @@ void Dumpast(CAst* a)
 		default:
 			printf("Undefined type of Substr function");
 		}
+		printf(")");
+	}
+
+	else if(!strcmp(a->whoami(), "CFexpress"))
+	{
+		printf("express(");
+		Dumpast(((CFexpress*)a)->a1);
+		printf(", ");
+		Dumpast(((CFexpress*)a)->a2);
 		printf(")");
 	}
 
@@ -520,10 +580,30 @@ void Dumpast(CAst* a)
 			Dumpast(((CHavGroup*)a)->hav);
 	}
 	
+	else if (!strcmp(a->whoami(), "CForUpdate"))
+	{
+		printf("\nfor update ");
+		Dumpast(((CForUpdate*)a)->a);
+	}
+
 	else if (!strcmp(a->whoami(), "COrder"))
 	{
 		printf("\norder by ");
 		Dumpast(((COrder*)a)->a);
+	}
+	
+	else if (!strcmp(a->whoami(), "CIndexBy"))
+	{
+		printf("\nindex by ");
+		Dumpast(((CIndexBy*)a)->a);
+	}
+
+	else if (!strcmp(a->whoami(), "CTotal"))
+	{
+		printf("\ntotal ");
+		Dumpast(((CTotal*)a)->a1);
+		printf("\nby ");
+		Dumpast(((CTotal*)a)->a2);
 	}
 	
 	else if (!strcmp(a->whoami(), "CAnOrderList"))
@@ -574,6 +654,28 @@ void Dumpast(CAst* a)
 	{
 		printf("%s", ((CMinus*)a)->str.c_str());
 		Dumpast(((CMinus*)a)->a);
+	}
+
+	else if(!strcmp(a->whoami(), "CUserVar"))
+	{
+		printf("&");
+		Dumpast(((CUserVar*)a)->pName);
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpts"))
+	{
+		for(int i = 0; i < ((CSelOpts*)a)->l.size(); i++)
+			Dumpast(((CSelOpts*)a)->l[i]);
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpt"))
+	{
+		printf("%s ", ((CSelOpt*)a)->str.c_str());
+		if(((CSelOpt*)a)->num != NULL)
+		{
+			Dumpast(((CSelOpt*)a)->num);
+			printf(" ");
+		}
 	}
 
 	else if(!strcmp(a->whoami(), "CString"))
@@ -746,7 +848,20 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 
 	debug("MakeEnv: %s", a->whoami());
 	/* rem env = */
-	if(!strcmp(a->whoami(), "CSelect"))
+	
+	if(!strcmp(a->whoami(), "CStmtList"))
+	{
+		env = new CEnv(env);
+		((CStmtList*)a)->env = env;
+
+		for(int i = 0; i < ((CStmtList*)a)->l.size(); i++)
+		{
+			MakeEnv(((CStmtList*)a)->l[i], env);
+		}
+		((CStmtList*)a)->env->print(stdout);
+	}
+
+	else if(!strcmp(a->whoami(), "CSelect"))
 	{
 		env = new CEnv(env);
 		((CSelect*)a)->env = env;
@@ -757,6 +872,10 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 		}
 		MakeEnv(((CSelect*)a)->tabrefs, env);
 		MakeEnv(((CSelect*)a)->sl, env);
+		if(((CSelect*)a)->into != NULL)
+		{
+			MakeEnv(((CSelect*)a)->into, env);
+		}
 		if(((CSelect*)a)->whr != NULL)
 		{
 			MakeEnv(((CSelect*)a)->whr, env);
@@ -769,9 +888,21 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 		{
 			MakeEnv(((CSelect*)a)->hav_grp, env);
 		}
+		if(((CSelect*)a)->upd != NULL)
+		{
+			MakeEnv(((CSelect*)a)->upd, env);
+		}
 		if(((CSelect*)a)->ord != NULL)
 		{
 			MakeEnv(((CSelect*)a)->ord, env);
+		}
+		if(((CSelect*)a)->idx != NULL)
+		{
+			MakeEnv(((CSelect*)a)->idx, env);
+		}
+		if(((CSelect*)a)->total != NULL)
+		{
+			MakeEnv(((CSelect*)a)->total, env);
 		}
 
 		((CSelect*)a)->env->print(stdout);
@@ -868,6 +999,20 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 		MakeEnv(((CSelExpr*)a)->a, env);
 	}
 
+	else if(!strcmp(a->whoami(), "CInto"))
+	{
+		//Добавить create_symbol
+		//Dumpast(((CInto*)a)->pName);
+		sym = env->prev->create_symbol(*(((CInto*)a)->pName), string(), string("with_table"));
+		//Get_column_names(sym, ((CWithList*)a)->l[i].a, MakeEnv(((CWithList*)a)->l[i].a, env));
+		((CInto*)a)->sym = sym;
+	}
+
+	else if (!strcmp(a->whoami(), "CSubordTable"))
+	{
+		MakeEnv(((CSubordTable*)a)->vall, env);
+	}
+
 	else if(!strcmp(a->whoami(), "CCmp"))
 	{
 		MakeEnv(((CCmp*)a)->l, env);
@@ -941,6 +1086,12 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 		default:
 			printf("MakeEnv for undefined type of Substr function");
 		}
+	}
+
+	else if(!strcmp(a->whoami(), "CFexpress"))
+	{
+		MakeEnv(((CFexpress*)a)->a1, env);
+		MakeEnv(((CFexpress*)a)->a2, env);
 	}
 
 	else if(!strcmp(a->whoami(), "CFtrim"))
@@ -1104,9 +1255,25 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 			MakeEnv(((CHavGroup*)a)->hav, env);
 	}
 
+	else if (!strcmp(a->whoami(), "CForUpdate"))
+	{
+		MakeEnv(((CForUpdate*)a)->a, env);
+	}
+
 	else if (!strcmp(a->whoami(), "COrder"))
 	{
 		MakeEnv(((COrder*)a)->a, env);
+	}
+
+	else if (!strcmp(a->whoami(), "CIndexBy"))
+	{
+		MakeEnv(((CIndexBy*)a)->a, env);
+	}
+
+	else if (!strcmp(a->whoami(), "CTotal"))
+	{
+		MakeEnv(((CTotal*)a)->a1, env);
+		MakeEnv(((CTotal*)a)->a2, env);
 	}
 
 	else if (!strcmp(a->whoami(), "CAnOrderList"))
@@ -1145,6 +1312,20 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 	else if(!strcmp(a->whoami(), "CMinus"))
 	{
 		MakeEnv(((CMinus*)a)->a, env);
+	}
+
+	else if(!strcmp(a->whoami(), "CUserVar"))
+	{
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpts"))
+	{
+		for(int i = 0; i < ((CSelOpts*)a)->l.size(); i++)
+			MakeEnv(((CSelOpts*)a)->l[i], env);
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpt"))
+	{
 	}
 
 	else if(!strcmp(a->whoami(), "CString"))
@@ -1194,6 +1375,25 @@ void Dumpast_html(CAst* a, FILE* f)
 </body>\n\
 \n\
 </html>");
+}
+
+void print_bracket(FILE* f, char c)
+{
+	static int bracket_html_style_num = 0;
+
+	if(c == '(')
+	{
+		/*bracket_html_style_num++;
+		fprintf(f, "<text class=\"text-table%i\">(</text>", bracket_html_style_num);*/
+		fprintf(f, "<text class=\"text-brackets\">(</text>");
+	}
+	else if(c == ')')
+	{
+		/*fprintf(f, "<text class=\"text-table%i\">)</text>", bracket_html_style_num);
+		bracket_html_style_num--;*/
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		fprintf(f, "<text class=\"text-brackets\">)</text>");
+	}
 }
 
 void print_ident(FILE* f, double d_length)
@@ -1249,7 +1449,18 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 	//Использование для отладки
 	//fprintf(f, "<text>&nbsp;prev->%s&nbsp;</text>", prev->whoami());
 
-	if(!strcmp(a->whoami(), "CSelect"))
+	if(!strcmp(a->whoami(), "CStmtList"))
+	{
+		for(int i = 0; i < ((CStmtList*)a)->l.size(); i++)
+		{
+			Dumpast_html_recurs(((CStmtList*)a)->l[i], f, level, a);
+			fprintf(f, "<text class=\"text-comma\">;</text>");
+			fprintf(f, "<br>");
+			fprintf(f, "<br>");
+		}
+	}
+
+	else if(!strcmp(a->whoami(), "CSelect"))
 	{
 		if(((CSelect*)a)->wth != NULL)
 		{
@@ -1259,11 +1470,25 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			print_ident(f, 8.0*level);
 		}
 		fprintf(f, "<text class=\"text-keyword-control\">select&nbsp;</text><text class=\"text-field\">");
+		if(((CSelect*)a)->opts != NULL)
+		{
+			Dumpast_html_recurs(((CSelect*)a)->opts, f, level, a);
+		}
 		Dumpast_html_recurs(((CSelect*)a)->sl, f, level, a);
-		fprintf(f, "<br>");
-		print_ident(f, 8.0*level);
-		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;&nbsp;from&nbsp;</text>");
-		Dumpast_html_recurs(((CSelect*)a)->tabrefs, f, level, a);
+		if(((CSelect*)a)->into != NULL)
+		{
+			fprintf(f, "<br>");
+			print_ident(f, 8.0*level);
+			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;&nbsp;into&nbsp;</text>");
+			Dumpast_html_recurs(((CSelect*)a)->into, f, level, a);
+		}
+		if(((CSelect*)a)->tabrefs != NULL)
+		{
+			fprintf(f, "<br>");
+			print_ident(f, 8.0*level);
+			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;&nbsp;from&nbsp;</text>");
+			Dumpast_html_recurs(((CSelect*)a)->tabrefs, f, level, a);
+		}
 		if(((CSelect*)a)->whr != NULL)
 		{
 			fprintf(f, "<br>");
@@ -1279,9 +1504,21 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		{
 			Dumpast_html_recurs(((CSelect*)a)->hav_grp, f, level, a);
 		}
+		if(((CSelect*)a)->upd != NULL)
+		{
+			Dumpast_html_recurs(((CSelect*)a)->upd, f, level, a);
+		}
 		if(((CSelect*)a)->ord != NULL)
 		{
 			Dumpast_html_recurs(((CSelect*)a)->ord, f, level, a);
+		}
+		if(((CSelect*)a)->idx != NULL)
+		{
+			Dumpast_html_recurs(((CSelect*)a)->idx, f, level, a);
+		}
+		if(((CSelect*)a)->total != NULL)
+		{
+			Dumpast_html_recurs(((CSelect*)a)->total, f, level, a);
 		}
 	}
 
@@ -1338,6 +1575,26 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			if(((CSelExpr*)a)->b_quot)
 				fprintf(f, "\"");
 		}
+	}
+
+	else if(!strcmp(a->whoami(), "CInto"))
+	{
+		/*fprintf(f, "<text class=\"text-field\">");
+		Dumpast_html_recurs(((CInto*)a)->pName, f, level);
+		fprintf(f, "</text>");*/
+
+		if(!((CInto*)a)->sym->kind.compare("with_table"))
+		{
+			fprintf(f, "<text class=\"");
+			fprintf(f, ((CInto*)a)->sym->html_style.c_str());
+			fprintf(f, "\">");
+		}
+		else
+		{
+			fprintf(f, "<text class=\"text-table\">");
+		}
+		Dumpast_html_recurs(((CInto*)a)->pName, f, level);
+		fprintf(f, "</text>");
 	}
 
 	else if(!strcmp(a->whoami(), "CExprList"))
@@ -1440,14 +1697,16 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		
 		if(b_left_paren)
 		{
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 		}
 		level+=left_logic_indent;
 		Dumpast_html_recurs(((CLogExp*)a)->l, f, level, a);
 		level-=left_logic_indent;
 		if(b_left_paren)
 		{
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 		}
 
 		fprintf(f, "<br>");
@@ -1457,14 +1716,16 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 
 		if(b_right_paren)
 		{
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 		}
 		level+=right_logic_indent;
 		Dumpast_html_recurs(((CLogExp*)a)->r, f, level, a);
 		level-=right_logic_indent;
 		if(b_right_paren)
 		{
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 		}
 	}
 
@@ -1488,9 +1749,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
 		fprintf(f, "<br>");
 		print_ident(f, 7.0 + 8.0 * (level));
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0 / 8.0, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CInSelExp"))
@@ -1502,9 +1765,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
 		fprintf(f, "<br>");
 		print_ident(f, 7.0 + 8.0 * (level - 1));
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CInSelExp*)a)->r, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CExistsExp"))
@@ -1515,9 +1780,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		fprintf(f, "<text class=\"text-keyword-control\">exists&nbsp;</text>");
 		fprintf(f, "<br>");
 		print_ident(f, 7.0 + 8.0 * (level - 1));
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CExistsExp*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CBtwnExp"))
@@ -1531,6 +1798,9 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 
 	else if(!strcmp(a->whoami(), "CJoin"))
 	{
+		//отступ для следующего блока
+		double dir_type_length = 0.0;
+
 		Dumpast_html_recurs(((CJoin*)a)->tab_refs, f, level, a);
 		
 		fprintf(f, "<br>");
@@ -1539,15 +1809,17 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		if (((CJoin*)a)->dir.size() > 0)
 		{
 			fprintf(f, "<text class=\"text-keyword-control\">%s&nbsp;</text>", ((CJoin*)a)->dir.c_str());
+			dir_type_length += ((double)((CJoin*)a)->dir.size())/8.0 + 1.0/8.0;
 		}
 		if (((CJoin*)a)->type.size() > 0)
 		{
 			fprintf(f, "<text class=\"text-keyword-control\">%s&nbsp;</text>", ((CJoin*)a)->type.c_str());
+			dir_type_length += ((double)((CJoin*)a)->type.size())/8.0 + 1.0/8.0;
 		}
 		fprintf(f, "<text class=\"text-keyword-control\">join&nbsp;</text>");
 		if( (!strcmp((((CJoin*)a)->tabl)->whoami(), "CJoin") ) )
 			level += 2.0/8.0;
-		Dumpast_html_recurs(((CJoin*)a)->tabl, f, level, a);
+		Dumpast_html_recurs(((CJoin*)a)->tabl, f, level + dir_type_length + 5.0/8.0, a);
 		if( ( !strcmp((((CJoin*)a)->tabl)->whoami(), "CJoin") ) )
 			level -= 2.0/8.0;
 
@@ -1565,55 +1837,14 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			print_ident(f, 8.0*level);
 			fprintf(f, "<text class=\"text-keyword-control\">%s&nbsp;</text>", ((CJoinCond*)a)->type.c_str());
 			if(!((CJoinCond*)a)->type.compare("using"))
-				fprintf(f, "<text class=\"text-brackets\">(</text>");
+				//fprintf(f, "<text class=\"text-brackets\">(</text>");
+				print_bracket(f, '(');
 			Dumpast_html_recurs(((CJoinCond*)a)->cond, f, level, a);
 			if(!((CJoinCond*)a)->type.compare("using"))
-				fprintf(f, "<text class=\"text-brackets\">)</text>");
+				//fprintf(f, "<text class=\"text-brackets\">)</text>");
+				print_bracket(f, ')');
 		}
 	}
-
-	/*else if(!strcmp(a->whoami(), "CJoin"))
-	{
-		Dumpast_html_recurs(((CJoin*)a)->tab_refs, f, level, a);
-		level -= 7.0/8.0;
-		fprintf(f, "<br>");
-		print_ident(f, 8.0*level);
-		if (((CJoin*)a)->dir.size() > 0)
-		{
-			print_ident(f, max(5.0-(double)((CJoin*)a)->dir.size(), 0.0));
-			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;%s</text>", ((CJoin*)a)->dir.c_str());
-		}
-		if (((CJoin*)a)->type.size() > 0)
-		{
-			if (((CJoin*)a)->dir.empty())
-			{
-				print_ident(f, max(5.0-(double)((CJoin*)a)->type.size(), 0.0));
-			}
-			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;%s</text>", ((CJoin*)a)->type.c_str());
-		}
-		if (!((CJoin*)a)->type.empty() || !((CJoin*)a)->dir.empty())
-		{	
-			fprintf(f, "<br>");
-			print_ident(f, 8.0*level);
-		}
-		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;&nbsp;join&nbsp;</text>");
-		Dumpast_html_recurs(((CJoin*)a)->tabl, f, level, a);
-		if(((CJoin*)a)->cond != NULL)
-		{
-			Dumpast_html_recurs(((CJoin*)a)->cond, f, level+3.0/8.0, a);
-		}
-	}
-
-	else if(!strcmp(a->whoami(), "CJoinCond"))
-	{
-		if(((CJoinCond*)a)->cond != NULL)
-		{
-			fprintf(f, "<br>");
-			print_ident(f, 8.0*level);
-			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;%s&nbsp;</text>", ((CJoinCond*)a)->type.c_str());
-			Dumpast_html_recurs(((CJoinCond*)a)->cond, f, level, a);
-		}
-	}*/
 
 	else if(!strcmp(a->whoami(), "CTabSub"))
 	{
@@ -1621,9 +1852,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			level+=7.0/8.0;*/
 		level+=1.0/8.0;
 		fprintf(f, "<text class=\"text-table\">");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CTabSub*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 		if(((CTabSub*)a)->alias.size() > 0)
 		{
 			if(!((CTabSub*)a)->sym->kind.compare("table") || !((CTabSub*)a)->sym->kind.compare("in_view"))
@@ -1651,9 +1884,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 	{
 		level+=1.0/8.0;
 		fprintf(f, "<text class=\"text-field\">");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CSelTabSub*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 		if(((CSelTabSub*)a)->alias.size() > 0)
 		{
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;as&nbsp;</text>");
@@ -1671,11 +1906,13 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		level+=5.0/8.0;
 		fprintf(f, "<text class=\"text-field\">");
 		print_ident(f, 4.0);
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CUnionSub*)a)->a, f, level, a);
 		fprintf(f, "<br>");
 		print_ident(f, max(8.0*level-1.0, 0.0));
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 		fprintf(f, "</text>");
 	}
 
@@ -1692,10 +1929,23 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		print_ident(f, 8.0*level);*/
 		level+=1.0/8.0;
 		fprintf(f, "<text class=\"text-field\">");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CExpTabSub*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 		fprintf(f, "</text>");
+	}
+
+	else if (!strcmp(a->whoami(), "CSubordTable"))
+	{
+		Dumpast_html_recurs(((CSubordTable*)a)->pName, f, level);
+		fprintf(f, ".");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
+		Dumpast_html_recurs(((CSubordTable*)a)->vall, f, level, a);
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CCmp"))
@@ -1754,9 +2004,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		Dumpast_html_recurs(((CCall*)a)->pName, f, level);
 		if(strcmp(prev->whoami(), "CTabProc"))
 			fprintf(f, "</text>");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CCall*)a)->vall, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CFcount"))
@@ -1764,24 +2016,33 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		if(((CFcount*)a)->b_all)
 		{
 			fprintf(f, "<text class=\"text-function\">count</text>");
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 			fprintf(f, "<text class=\"text-keyword-control\">*</text>");
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 			fprintf(f, "</text>");
 		}
 		else
 		{
 			fprintf(f, "<text class=\"text-function\">count</text>");
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
+			if(((CFcount*)a)->opts != NULL)
+			{
+				Dumpast_html_recurs(((CFcount*)a)->opts, f, level, a);
+			}
 			Dumpast_html_recurs(((CFcount*)a)->a, f, level, a);
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 		}
 	}
 
 	else if(!strcmp(a->whoami(), "CFsubstr"))
 	{
 		fprintf(f, "<text class=\"text-function\">substr</text>");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		switch (((CFsubstr*)a)->type)
 		{
 		case 1:
@@ -1802,13 +2063,27 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		default:
 			fprintf(f, "<text>Undefined type of Substr function</text>");
 		}
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
+	}
+
+	else if(!strcmp(a->whoami(), "CFexpress"))
+	{
+		fprintf(f, "<text class=\"text-function\">express</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
+		Dumpast_html_recurs(((CFexpress*)a)->a1, f, level, a);
+		fprintf(f, "<text class=\"text-comma\">,&nbsp;</text>");
+		Dumpast_html_recurs(((CFexpress*)a)->a2, f, level, a);
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CFtrim"))
 	{
 		fprintf(f, "<text class=\"text-function\">trim</text>");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		if(((CFtrim*)a)->trim_ltb.empty())
 		{
 			Dumpast_html_recurs(((CFtrim*)a)->vall, f, level, a);
@@ -1820,7 +2095,8 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			fprintf(f, "<text class=\"text-function\">&nbsp;keyword-control&nbsp;</text>");
 			Dumpast_html_recurs(((CFtrim*)a)->vall, f, level, a);
 		}
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CInterval"))
@@ -1887,9 +2163,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 	else if(!strcmp(a->whoami(), "COutPlus"))
 	{
 		Dumpast_html_recurs(((COutPlus*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		fprintf(f, "<text class=\"text-keyword-control\">+</text>");
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if (!strcmp(a->whoami(), "CUnion"))
@@ -1922,12 +2200,14 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		if(((CTabProc*)a)->b_table_pref)
 		{
 			fprintf(f, "<text class=\"text-keyword-control\">table</text>");
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 		}
 		Dumpast_html_recurs(((CTabProc*)a)->a, f, level, a);
 		if(((CTabProc*)a)->b_table_pref)
 		{
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 		}
 
 		if(((CTabProc*)a)->alias.size()>0)
@@ -1974,9 +2254,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			fprintf(f, "<br>");
 			print_ident(f, 8.0*(level+3.0/8.0));
 
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 			Dumpast_html_recurs(((CWithList*)a)->l[i].a, f, level+4.0/8.0, a);
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 			if(i + 1 < ((CWithList*)a)->l.size())
 				fprintf(f, "<text class=\"text-comma\">,&nbsp;</text>");
 		}
@@ -2024,7 +2306,8 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 	else if (!strcmp(a->whoami(), "CAnalytic"))
 	{
 		fprintf(f, "<text class=\"text-function\">&nbsp;over</text>");
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		if(((CAnalytic*)a)->part != NULL)
 			Dumpast_html_recurs(((CAnalytic*)a)->part, f, level, a);
 		if(((CAnalytic*)a)->ord != NULL)
@@ -2035,7 +2318,8 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		}
 		if(((CAnalytic*)a)->wind != NULL)
 			Dumpast_html_recurs(((CAnalytic*)a)->wind, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 	
 	else if (!strcmp(a->whoami(), "CWindow"))
@@ -2107,12 +2391,41 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		Dumpast_html_recurs(((CHaving*)a)->a, f, level, a);
 	}
 	
+	else if (!strcmp(a->whoami(), "CForUpdate"))
+	{
+		fprintf(f, "<br>");
+		print_ident(f, 8.0*level);
+		fprintf(f, "<text class=\"text-keyword-control\">for&nbsp;update&nbsp;</text>");
+		Dumpast_html_recurs(((CForUpdate*)a)->a, f, level + 11.0/8.0, a);
+	}
+
 	else if (!strcmp(a->whoami(), "COrder"))
 	{
 		fprintf(f, "<br>");
 		print_ident(f, 8.0*level);
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;order&nbsp;by&nbsp;</text>");
 		Dumpast_html_recurs(((COrder*)a)->a, f, level + 10.0/8.0, a);
+	}
+
+	else if (!strcmp(a->whoami(), "CIndexBy"))
+	{
+		fprintf(f, "<br>");
+		print_ident(f, 8.0*level);
+		fprintf(f, "<text class=\"text-keyword-control\">index&nbsp;by&nbsp;</text>");
+		Dumpast_html_recurs(((CIndexBy*)a)->a, f, level, a);
+	}
+
+	else if (!strcmp(a->whoami(), "CTotal"))
+	{
+		fprintf(f, "<br>");
+		print_ident(f, 8.0*level);
+		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;total&nbsp;</text>");
+		Dumpast_html_recurs(((CTotal*)a)->a1, f, level + 7.0/8.0, a);
+		fprintf(f, "<br>");
+		print_ident(f, 8.0*level);
+		print_ident(f, 4.0);
+		fprintf(f, "<text class=\"text-keyword-control\">by&nbsp;</text>");
+		Dumpast_html_recurs(((CTotal*)a)->a2, f, level + 7.0/8.0, a);
 	}
 	
 	else if (!strcmp(a->whoami(), "CAnOrderList"))
@@ -2141,33 +2454,63 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 
 	else if(!strcmp(a->whoami(), "CTabBrac"))
 	{
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		print_ident(f, 6.0);
 		Dumpast_html_recurs(((CTabBrac*)a)->a, f, level, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CExpBrac"))
 	{
-		fprintf(f, "<text class=\"text-brackets\">(</text>");
+		//fprintf(f, "<text class=\"text-brackets\">(</text>");
+		print_bracket(f, '(');
 		Dumpast_html_recurs(((CExpBrac*)a)->a, f, level-6.0/8.0, a);
-		fprintf(f, "<text class=\"text-brackets\">)</text>");
+		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CNot"))
 	{
 		fprintf(f, "<text class=\"text-keyword-control\">%s&nbsp;</text>", ((CNot*)a)->str.c_str());
 		if(strcmp(((CNot*)a)->a->whoami(), "CExpBrac"))
-			fprintf(f, "<text class=\"text-brackets\">(</text>");
+			//fprintf(f, "<text class=\"text-brackets\">(</text>");
+			print_bracket(f, '(');
 		Dumpast_html_recurs(((CNot*)a)->a, f, level+(double)(((CNot*)a)->str.size()+2)/8.0, a);
 		if(strcmp(((CNot*)a)->a->whoami(), "CExpBrac"))
-			fprintf(f, "<text class=\"text-brackets\">)</text>");
+			//fprintf(f, "<text class=\"text-brackets\">)</text>");
+			print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CMinus"))
 	{
 		fprintf(f, "<text class=\"text-keyword-control\">%s</text>", ((CMinus*)a)->str.c_str());
 		Dumpast_html_recurs(((CMinus*)a)->a, f, level, a);
+	}
+
+	else if(!strcmp(a->whoami(), "CUserVar"))
+	{
+		fprintf(f, "<text class=\"text-user-var\">");
+		fprintf(f, "&amp;");
+		Dumpast_html_recurs(((CUserVar*)a)->pName, f, level);
+		fprintf(f, "</text>");
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpts"))
+	{
+		for(int i = 0; i < ((CSelOpts*)a)->l.size(); i++)
+			Dumpast_html_recurs(((CSelOpts*)a)->l[i], f, level, a);
+	}
+
+	else if(!strcmp(a->whoami(), "CSelOpt"))
+	{
+		fprintf(f, "<text class=\"text-keyword-control\">%s&nbsp;</text>", ((CSelOpt*)a)->str.c_str());
+		if(((CSelOpt*)a)->num != NULL)
+		{
+			Dumpast_html_recurs(((CSelOpt*)a)->num, f, level, a);
+			print_ident(f, 1.0);
+		}
 	}
 
 	else if(!strcmp(a->whoami(), "CString"))
