@@ -453,6 +453,21 @@ void Dumpast(CAst* a)
 		}
 	}
 
+	else if (!strcmp(a->whoami(), "CTabVar"))
+	{
+		Dumpast(((CTabVar*)a)->a);
+
+		if(((CTabVar*)a)->alias.size()>0)
+		{
+			printf(" as ");
+			if(((CTabVar*)a)->b_quot)
+				printf("\"");
+			printf("%s", ((CTabVar*)a)->alias.text.c_str());
+			if(((CTabVar*)a)->b_quot)
+				printf("\"");
+		}
+	}
+
 	else if(!strcmp(a->whoami(), "CWith"))
 	{
 		Dumpast(((CWith*)a)->a);
@@ -1157,6 +1172,13 @@ CEnv* MakeEnv(CAst* a, CEnv* env)
 		MakeEnv(((CTabProc*)a)->a, env);
 	}
 
+	else if (!strcmp(a->whoami(), "CTabVar"))
+	{
+		sym = env->create_symbol(CName(), ((CTabVar*)a)->alias, "tab_var");
+		((CTabVar*)a)->sym = sym;
+		MakeEnv(((CTabVar*)a)->a, env);
+	}
+
 	else if(!strcmp(a->whoami(), "CWith"))
 	{
 		MakeEnv(((CWith*)a)->a, env);
@@ -1461,6 +1483,11 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			fprintf(f, "<text class=\"text-comma\">;</text>");
 			fprintf(f, "<br>");
 			fprintf(f, "<br>");
+			/*fprintf(f, "<br>");
+			fprintf(f, "<text class=\"text-comment\">");
+			fprintf(f, "////////////////////////////////////////////////////////////////////////////////");
+			fprintf(f, "</text>");
+			fprintf(f, "<br>");*/
 		}
 	}
 
@@ -1583,10 +1610,6 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 
 	else if(!strcmp(a->whoami(), "CInto"))
 	{
-		/*fprintf(f, "<text class=\"text-field\">");
-		Dumpast_html_recurs(((CInto*)a)->pName, f, level);
-		fprintf(f, "</text>");*/
-
 		if(!((CInto*)a)->sym->kind.compare("with_table"))
 		{
 			fprintf(f, "<text class=\"");
@@ -1755,29 +1778,35 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		if(!((CInValExp*)a)->b_flag)
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;not</text>");
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
-		fprintf(f, "<br>");
-		print_ident(f, 7.0 + 8.0 * (level));
-		//fprintf(f, "<text class=\"text-brackets\">(</text>");
 		print_bracket(f, '(');
-		//Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0 / 8.0, a);
 		Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0, a);
-		//fprintf(f, "<text class=\"text-brackets\">)</text>");
 		print_bracket(f, ')');
 	}
 
 	else if(!strcmp(a->whoami(), "CInSelExp"))
 	{
-		level++;
+		/*level++;
 		Dumpast_html_recurs(((CInSelExp*)a)->l, f, level, a);
 		if(!((CInSelExp*)a)->b_flag)
 			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;not</text>");
 		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
 		fprintf(f, "<br>");
 		print_ident(f, 7.0 + 8.0 * (level - 1));
-		//fprintf(f, "<text class=\"text-brackets\">(</text>");
 		print_bracket(f, '(');
 		Dumpast_html_recurs(((CInSelExp*)a)->r, f, level, a);
-		//fprintf(f, "<text class=\"text-brackets\">)</text>");
+		print_bracket(f, ')');*/
+		if(!(strcmp(((CInValExp*)a)->l->whoami(), "CValList")))
+			print_bracket(f, '(');
+		Dumpast_html_recurs(((CInValExp*)a)->l, f, level, a);
+		if(!(strcmp(((CInValExp*)a)->l->whoami(), "CValList")))
+			print_bracket(f, ')');
+		if(!((CInValExp*)a)->b_flag)
+			fprintf(f, "<text class=\"text-keyword-control\">&nbsp;not</text>");
+		fprintf(f, "<text class=\"text-keyword-control\">&nbsp;in&nbsp;</text>");
+		fprintf(f, "<br>");
+		print_ident(f, 8.0 * (level+7.0/8.0));
+		print_bracket(f, '(');
+		Dumpast_html_recurs(((CInValExp*)a)->r, f, level + 1.0, a);
 		print_bracket(f, ')');
 	}
 
@@ -1979,12 +2008,16 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 		b_val_list_seq = true;
 		for(int i = 0; i < ((CValList*)a)->l.size(); i++)
 		{
-			if( !strcmp(((CValList*)a)->l[i]->whoami(), "CExpTabSub") )
+			if( !strcmp(((CValList*)a)->l[i]->whoami(), "CExpTabSub") ||
+				!strcmp(((CValList*)a)->l[i]->whoami(), "CLogExp") ||
+				!strcmp(((CValList*)a)->l[i]->whoami(), "CInSelExp") ||
+				!strcmp(((CValList*)a)->l[i]->whoami(), "CCase") )
 			{
 				b_val_list_seq = false;
 				break;
 			}
 		}
+		//b_val_list_seq = false;
 
 		if(!b_val_list_seq)
 		{
@@ -2229,6 +2262,33 @@ void Dumpast_html_recurs(CAst* a, FILE* f, double level, CAst* prev)
 			if(((CTabProc*)a)->b_quot)
 				fprintf(f, "\"");
 			fprintf(f, "%s", ((CTabProc*)a)->alias.text.c_str());
+			if(((CTabProc*)a)->b_quot)
+				fprintf(f, "\"");
+		}
+		fprintf(f, "</text>");
+
+	}
+
+	else if (!strcmp(a->whoami(), "CTabVar"))
+	{
+		Dumpast_html_recurs(((CTabVar*)a)->a, f, level, a);
+
+		if(!((CTabVar*)a)->sym->kind.compare("tab_var"))
+		{
+			fprintf(f, "<text class=\"");
+			fprintf(f, ((CTabVar*)a)->sym->html_style.c_str());
+			fprintf(f, "\">");
+		}
+		else
+		{
+			fprintf(f, "<text class=\"text-table\">");
+		}
+		if(((CTabVar*)a)->alias.size()>0)
+		{
+			print_ident(f, 1.0);
+			if(((CTabVar*)a)->b_quot)
+				fprintf(f, "\"");
+			fprintf(f, "%s", ((CTabVar*)a)->alias.text.c_str());
 			if(((CTabProc*)a)->b_quot)
 				fprintf(f, "\"");
 		}

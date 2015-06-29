@@ -409,6 +409,18 @@ public:
 	~CTabProc();
 };
 
+/********* CTabVar *********/
+class CTabVar: public CAst
+{
+public:
+	CAst* a;
+	quot_string alias;
+	CSymbol* sym;
+	bool b_quot;
+	virtual char* whoami() const;
+	~CTabVar();
+};
+
 /********* CWith *********/
 class CWith: public CAst
 {
@@ -768,6 +780,7 @@ CAst* newCOutPlus(CAst* a, char* pszStr);
 CAst* newCUnion(CAst* a1, CAst* a2, char* pszStr);
 CAst* newCUnionSub(CAst* a);
 CAst* newCTabProc(CAst* a, char* pszAlias, bool b_quot, bool b_table_pref);
+CAst* newCTabVar(CAst* a, char* pszAlias, bool b_quot);
 CAst* newCWith(CAst* a);
 CAst* newCWithList(CAst* a, CName* pName);
 CAst* addtoCWithList(CAst* wl, CAst* a, CName* pName);

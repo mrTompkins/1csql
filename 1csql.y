@@ -505,6 +505,7 @@ table_reference_or_subquery: table_reference
 
 table_factor:
     compose_name opt_as_alias index_hint { emit("TABLE"); $$ = newCTable($1, $2->psz, $2->b_quot); }
+  | USERVAR opt_as_alias { emit("TABVAR"); $$ = newCTabVar(newCUserVar(newCName($1, false)), $2->psz, $2->b_quot); free($1); }
   | '(' table_references ')' { emit("TABLEREFERENCES"); $$ = newCTabBrac($2); }
   | TABLE '(' func ')' opt_as_alias { emit("TABPROC"); $$ = newCTabProc($3, $5->psz, $5->b_quot, true); }
   | func opt_as_alias { emit("TABFUNC"); $$ = newCTabProc($1, $2->psz, $2->b_quot, false); }
@@ -646,58 +647,30 @@ expr:  expr_or_subquery IS NULLX     { emit("ISNULL"); $$ = newCIsExp($1, true, 
 expr: expr_or_subquery BETWEEN expr_or_subquery AND expr_or_subquery %prec BETWEEN { emit("BETWEEN"); $$ = newCBtwnExp($1, $3, $5); }
    ;
 
-/*val_list: ',' { $$ = newCValList(); }
-   | expr opt_as_alias { $$ = newCValList($1); }
-   | NULLX opt_as_alias { $$ = newCValList(newCNull()); }
-   | val_list',' expr_or_subquery opt_as_alias  { $$ = addtoCValList($1, $3); }
-   | table_subquery opt_as_alias',' expr_or_subquery opt_as_alias { $$ = addtoCValList(newCValList(newCExpTabSub($1)), $4); }
-   | val_list',' { $$ = $1; }
-   ;
-   
-opt_val_list:  nil  { $$ = newCValList(); }
-   | val_list { $$ = $1; }
-   ;*/
-   
 val_list: /* nil */ { $$ = newCValList(); }
    | expr_or_subquery opt_as_alias ',' expr_or_subquery opt_as_alias { $$ = addtoCValList(newCValList($1), $4); }
    | val_list ',' expr_or_subquery opt_as_alias  { $$ = addtoCValList($1, $3); }
    | val_list ',' { $$ = $1; }
    ;
 
-opt_val_list:  /* nil   { $$ = newCValList(); }
-   |*/ val_list { $$ = $1; }
+opt_val_list:  val_list { $$ = $1; }
    | expr_or_subquery opt_as_alias { $$ = newCValList($1); }
    ;
 
-/*expr: '(' val_list ')' IN '(' expr ')'       { emit("ISIN"); $$ = newCInValExp($2, $6, true); }
-   | '(' val_list ')' IN '(' val_list ')'       { emit("ISIN"); $$ = newCInValExp($2, $6, true); }
-   | '(' val_list ')' NOT IN '(' val_list ')'    { emit("ISIN"); emit("NOT"); $$ = newCInValExp($2, $7, false); }
-   | '(' val_list ')' IN table_subquery       { emit("ISIN"); $$ = newCInSelExp($2, $5, true); }
-   | '(' val_list ')' NOT IN table_subquery    { emit("ISIN"); emit("NOT"); $$ = newCInSelExp($2, $6, false); }
-   | expr_or_subquery IN '(' val_list ')'       { emit("ISIN"); $$ = newCInValExp($1, $4, true); }
-   | expr_or_subquery NOT IN '(' val_list ')'    { emit("ISIN"); emit("NOT"); $$ = newCInValExp($1, $5, false); }
-   | expr_or_subquery IN table_subquery     { emit("INSELECT"); $$ = newCInSelExp($1, $3, true); }
-   | expr_or_subquery NOT IN table_subquery { emit("INSELECT"); emit("NOT"); $$ = newCInSelExp($1, $4, false); }
-   | EXISTS table_subquery      { emit("EXISTS"); if($1)emit("NOT"); $$ = newCExistsExp($2, !$1); }
-   ;*/
-   
-expr: '(' val_list ')' IN '(' val_list ')'	{ emit("ISIN"); $$ = newCInValExp($2, $6, true); }
-   | '(' val_list ')' IN '(' expr ')'		{ emit("ISIN"); $$ = newCInValExp($2, $6, true); }
-   | '(' val_list ')' IN table_subquery		{ emit("ISIN"); $$ = newCInValExp($2, $5, true); }
-   
-   | expr_or_subquery IN '(' val_list ')'	{ emit("ISIN"); $$ = newCInValExp($1, $4, true); }
-   | expr_or_subquery IN '(' expr ')'		{ emit("ISIN"); $$ = newCInValExp($1, $4, true); }
-   | expr_or_subquery IN table_subquery		{ emit("ISIN"); $$ = newCInValExp($1, $3, true); }
-   
+expr: '(' val_list ')' IN '(' val_list ')'		{ emit("ISIN"); $$ = newCInValExp($2, $6, true); }
+   | '(' val_list ')' IN '(' expr ')'			{ emit("ISIN"); $$ = newCInValExp($2, $6, true); }
+   | '(' val_list ')' IN table_subquery			{ emit("ISIN"); $$ = newCInSelExp($2, $5, true); }
    | '(' val_list ')' NOT IN '(' val_list ')'	{ emit("ISIN"); $$ = newCInValExp($2, $7, false); }
    | '(' val_list ')' NOT IN '(' expr ')'		{ emit("ISIN"); $$ = newCInValExp($2, $7, false); }
-   | '(' val_list ')' NOT IN table_subquery		{ emit("ISIN"); $$ = newCInValExp($2, $6, false); }
-   
+   | '(' val_list ')' NOT IN table_subquery		{ emit("ISIN"); $$ = newCInSelExp($2, $6, false); }
+   | expr_or_subquery IN '(' val_list ')'		{ emit("ISIN"); $$ = newCInValExp($1, $4, true); }
+   | expr_or_subquery IN '(' expr ')'			{ emit("ISIN"); $$ = newCInValExp($1, $4, true); }
+   | expr_or_subquery IN table_subquery			{ emit("ISIN"); $$ = newCInSelExp($1, $3, true); }
    | expr_or_subquery NOT IN '(' val_list ')'	{ emit("ISIN"); $$ = newCInValExp($1, $5, false); }
    | expr_or_subquery NOT IN '(' expr ')'		{ emit("ISIN"); $$ = newCInValExp($1, $5, false); }
-   | expr_or_subquery NOT IN table_subquery		{ emit("ISIN"); $$ = newCInValExp($1, $4, false); }
+   | expr_or_subquery NOT IN table_subquery		{ emit("ISIN"); $$ = newCInSelExp($1, $4, false); }
 
-   | EXISTS table_subquery					{ emit("EXISTS"); if($1)emit("NOT"); $$ = newCExistsExp($2, !$1); }
+   | EXISTS table_subquery						{ emit("EXISTS"); if($1)emit("NOT"); $$ = newCExistsExp($2, !$1); }
    ;
    
 expr: compose_name '.' '(' opt_val_list ')' {  emit("SUBORDTABLE"); $$ = newCSubordTable($1, $4); }

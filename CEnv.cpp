@@ -99,7 +99,7 @@ CSymbol* CEnv::find_table_for_column(string name, string tab)
 			//ссылка на символ
 			sym = e->table[iv];
 
-			if((!(sym->kind.compare("table")) || !(sym->kind.compare("in_view"))) || !(sym->kind.compare("tab_proc")))
+			if((!(sym->kind.compare("table")) || !(sym->kind.compare("in_view"))) || !(sym->kind.compare("tab_proc")) || !(sym->kind.compare("tab_var")))
 			{
 				//спецификатор столбца задан и имя или синоним таблицы совпадают с ним
 				if(tab.size() > 0 && (!tab.compare(sym->alias) || sym->alias.size() == 0 && !tab.compare(sym->name)))
@@ -152,7 +152,7 @@ CSymbol* CEnv::create_symbol(CName name, string alias, string kind)
 
 	debug("create_symbol");
 
-	if(!kind.compare("table") || !kind.compare("in_view") || !kind.compare("with_table") || !kind.compare("tab_proc"))
+	if(!kind.compare("table") || !kind.compare("in_view") || !kind.compare("with_table") || !kind.compare("tab_proc") || !kind.compare("tab_var"))
 	{
 		//определяем имя таблицы
 		if(name.size() > 0)

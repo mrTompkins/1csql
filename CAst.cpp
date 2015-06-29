@@ -595,6 +595,19 @@ CTabProc::~CTabProc()
 	debug("~CTabProc end");
 }
 
+/********* CTabVar *********/
+char* CTabVar::whoami() const
+{
+	return "CTabVar";
+}
+
+CTabVar::~CTabVar()
+{
+	debug("~CTabVar");
+	delete a;
+	debug("~CTabVar end");
+}
+
 /********* CWith *********/
 char* CWith::whoami() const
 {
@@ -1455,6 +1468,20 @@ CAst* newCTabProc(CAst* a, char* pszAlias, bool b_quot, bool b_table_pref)
 	pTabProc->alias = quot_string(sLowAlias, strAlias, false);
 	pTabProc->b_table_pref = b_table_pref;
 	return pTabProc;
+}
+
+/*** newCTabVar ***/
+CAst* newCTabVar(CAst* a, char* pszAlias, bool b_quot)
+{
+	debug("newCTabVar");
+	CTabVar* pTabVar = new CTabVar;
+	pTabVar->a = a;
+	pTabVar->b_quot = b_quot;
+	string strAlias = string(pszAlias==NULL?"":pszAlias);
+	string sLowAlias(strAlias);
+	lower(sLowAlias);
+	pTabVar->alias = quot_string(sLowAlias, strAlias, false);
+	return pTabVar;
 }
 
 /*** newCWith ***/

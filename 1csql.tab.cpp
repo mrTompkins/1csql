@@ -2994,7 +2994,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 508 "us\\1csql\\1csql.y"
-    { emit("TABLEUSERVAR"); (yyval.a) = newCTable(newCName((yyvsp[(1) - (2)].strval), false), (yyvsp[(2) - (2)].qpsz)->psz, (yyvsp[(2) - (2)].qpsz)->b_quot); free((yyvsp[(1) - (2)].strval)); ;}
+    { emit("TABVAR"); (yyval.a) = newCTabVar(newCUserVar(newCName((yyvsp[(1) - (2)].strval), false)), (yyvsp[(2) - (2)].qpsz)->psz, (yyvsp[(2) - (2)].qpsz)->b_quot); free((yyvsp[(1) - (2)].strval)); ;}
     break;
 
   case 87:
@@ -3631,7 +3631,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 662 "us\\1csql\\1csql.y"
-    { emit("ISIN"); (yyval.a) = newCInValExp((yyvsp[(2) - (5)].a), (yyvsp[(5) - (5)].a), true); ;}
+    { emit("ISIN"); (yyval.a) = newCInSelExp((yyvsp[(2) - (5)].a), (yyvsp[(5) - (5)].a), true); ;}
     break;
 
   case 178:
@@ -3652,7 +3652,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 665 "us\\1csql\\1csql.y"
-    { emit("ISIN"); (yyval.a) = newCInValExp((yyvsp[(2) - (6)].a), (yyvsp[(6) - (6)].a), false); ;}
+    { emit("ISIN"); (yyval.a) = newCInSelExp((yyvsp[(2) - (6)].a), (yyvsp[(6) - (6)].a), false); ;}
     break;
 
   case 181:
@@ -3673,7 +3673,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 668 "us\\1csql\\1csql.y"
-    { emit("ISIN"); (yyval.a) = newCInValExp((yyvsp[(1) - (3)].a), (yyvsp[(3) - (3)].a), true); ;}
+    { emit("ISIN"); (yyval.a) = newCInSelExp((yyvsp[(1) - (3)].a), (yyvsp[(3) - (3)].a), true); ;}
     break;
 
   case 184:
@@ -3694,7 +3694,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 671 "us\\1csql\\1csql.y"
-    { emit("ISIN"); (yyval.a) = newCInValExp((yyvsp[(1) - (4)].a), (yyvsp[(4) - (4)].a), false); ;}
+    { emit("ISIN"); (yyval.a) = newCInSelExp((yyvsp[(1) - (4)].a), (yyvsp[(4) - (4)].a), false); ;}
     break;
 
   case 187:
